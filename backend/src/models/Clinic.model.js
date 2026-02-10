@@ -52,11 +52,15 @@ const clinicSchema = new Schema(
       default: true,
       index: true,
     },
+    onboardingCompletedAt: {
+      type: Date,
+    },
     settings: {
       appointmentSlotMinutes: { type: Number, default: 15, min: 5, max: 120 },
       allowOverbooking: { type: Boolean, default: false },
       reminderLeadMinutes: { type: Number, default: 120, min: 0 },
       currency: { type: String, default: 'INR', trim: true },
+      dashboardActive: { type: Boolean, default: false },
     },
   },
   {

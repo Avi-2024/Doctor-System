@@ -34,7 +34,7 @@ const userSchema = new Schema(
     role: {
       type: String,
       required: true,
-      enum: ['admin', 'doctor', 'receptionist'],
+      enum: ['SUPER_ADMIN', 'CLINIC_OWNER', 'DOCTOR', 'STAFF'],
       index: true,
     },
     doctorProfile: {
