@@ -27,7 +27,7 @@ const notificationSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ['appointment_confirmation', 'appointment_reminder', 'follow_up', 'billing_due', 'general'],
+      enum: ['appointment_confirmation', 'appointment_reminder', 'hospital_time_booking_alert', 'follow_up', 'billing_due', 'general'],
       required: true,
       index: true,
     },

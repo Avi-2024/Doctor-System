@@ -52,8 +52,14 @@ const appointmentSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['scheduled', 'checked_in', 'in_consultation', 'completed', 'cancelled', 'no_show'],
-      default: 'scheduled',
+      enum: ['booked', 'waiting', 'completed', 'cancelled'],
+      default: 'booked',
+      index: true,
+    },
+    bookingContext: {
+      type: String,
+      enum: ['clinic_time', 'hospital_time'],
+      required: true,
       index: true,
     },
     reason: {

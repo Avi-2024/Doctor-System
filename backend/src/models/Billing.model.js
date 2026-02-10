@@ -67,6 +67,12 @@ const billingSchema = new Schema(
       default: 'issued',
       index: true,
     },
+    paymentStatus: {
+      type: String,
+      enum: ['due', 'paid'],
+      default: 'due',
+      index: true,
+    },
     dueDate: {
       type: Date,
     },
