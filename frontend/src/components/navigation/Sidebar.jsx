@@ -10,8 +10,11 @@ const menuByRole = {
     { label: 'Appointments', to: '/appointments' },
     { label: 'Patients', to: '/patients' },
     { label: 'Billing', to: '/billing' },
+    { label: 'Reception Desk', to: '/reception' },
     { label: 'Prescriptions', to: '/prescriptions' },
+    { label: 'Reception Desk', to: '/reception' },
     { label: 'Settings', to: '/settings' },
+    { label: 'Reception Desk', to: '/reception' },
   ],
   DOCTOR: [
     { label: 'Dashboard', to: '/dashboard' },
@@ -20,6 +23,7 @@ const menuByRole = {
     { label: 'Appointments', to: '/appointments' },
     { label: 'Patients', to: '/patients' },
     { label: 'Prescriptions', to: '/prescriptions' },
+    { label: 'Reception Desk', to: '/reception' },
   ],
   RECEPTIONIST: [
     { label: 'Dashboard', to: '/dashboard' },
@@ -28,6 +32,7 @@ const menuByRole = {
     { label: 'Appointments', to: '/appointments' },
     { label: 'Patients', to: '/patients' },
     { label: 'Billing', to: '/billing' },
+    { label: 'Reception Desk', to: '/reception' },
   ],
 };
 

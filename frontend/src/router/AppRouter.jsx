@@ -11,6 +11,7 @@ import PrescriptionsPage from '../pages/Prescriptions/PrescriptionsPage';
 import SettingsPage from '../pages/Settings/SettingsPage';
 import DoctorDashboardPage from '../pages/Doctor/DoctorDashboardPage';
 import ConsultationPage from '../pages/Doctor/ConsultationPage';
+import ReceptionistDashboardPage from '../pages/Receptionist/ReceptionistDashboardPage';
 
 function AppRouter() {
   return (
@@ -24,6 +25,7 @@ function AppRouter() {
           <Route path="/appointments" element={<AppointmentsPage />} />
           <Route path="/patients" element={<PatientsPage />} />
           <Route path="/doctor" element={<DoctorDashboardPage />} />
+          <Route path="/reception" element={<ReceptionistDashboardPage />} />
         </Route>
       </Route>
 
