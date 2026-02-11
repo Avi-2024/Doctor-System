@@ -47,6 +47,17 @@ const clinicSchema = new Schema(
       trim: true,
     },
     specialties: [{ type: String, trim: true }],
+    subscriptionStatus: {
+      type: String,
+      enum: ['trial', 'active', 'past_due', 'cancelled'],
+      default: 'trial',
+      index: true,
+    },
+    planName: {
+      type: String,
+      trim: true,
+      default: 'Starter',
+    },
     isActive: {
       type: Boolean,
       default: true,

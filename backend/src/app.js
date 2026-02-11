@@ -4,6 +4,7 @@ const { errorHandler } = require('./middleware/error/errorHandler.middleware');
 
 const app = express();
 
+app.use('/api/v1/subscriptions/razorpay/webhook', express.raw({ type: '*/*' }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
