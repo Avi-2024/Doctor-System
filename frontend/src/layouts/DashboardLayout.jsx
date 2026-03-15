@@ -1,31 +1,37 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import Sidebar from '../components/navigation/Sidebar';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useEffect, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import Sidebar from '../components/layout/Sidebar';
+import Header from '../components/layout/Header';
 
 function DashboardLayout() {
-  const { activeClinicId, user, switchClinic } = useAuth();
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <Sidebar />
-      <main style={{ padding: 16, flex: 1 }}>
-        <header>
-          <h2>Role Dashboard</h2>
-          <div>
-            <span>Active Clinic: {activeClinicId || 'N/A'}</span>
-            {user?.clinicIds?.length > 1 && (
-              <select value={activeClinicId || ''} onChange={(e) => switchClinic(e.target.value)}>
-                {user.clinicIds.map((clinicId) => (
-                  <option key={clinicId} value={clinicId}>
-                    {clinicId}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-        </header>
-        <Outlet />
+    <div className="min-h-screen bg-medical-background md:flex">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      <main className="min-h-screen flex-1 p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto w-full max-w-[1600px]">
+          <Header onMenuClick={() => setSidebarOpen(true)} />
+
+          <AnimatePresence mode="wait">
+            <motion.section
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.24, ease: 'easeOut' }}
+            >
+              <Outlet />
+            </motion.section>
+          </AnimatePresence>
+        </div>
       </main>
     </div>
   );

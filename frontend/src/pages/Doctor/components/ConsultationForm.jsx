@@ -1,85 +1,146 @@
 import React from 'react';
+import { FileText, FlaskConical, Pill, Plus, Send, Trash2 } from 'lucide-react';
 
-function ConsultationForm({ form, setForm, onAddMedicine, onRemoveMedicine, onToggleTest, onSaveVisit, onGeneratePdf, saving }) {
-  const availableTests = ['CBC', 'LFT', 'KFT', 'Thyroid Profile', 'X-Ray Chest', 'ECG'];
+const availableTests = ['CBC', 'LFT', 'KFT', 'Thyroid', 'X-Ray Chest', 'ECG'];
+
+function ConsultationForm({
+  form,
+  setForm,
+  onAddMedicine,
+  onRemoveMedicine,
+  onToggleTest,
+  onSaveVisit,
+  onGeneratePdf,
+  saving,
+  selectedQueueItem,
+}) {
+  const selectedPatientName = selectedQueueItem?.patientName || selectedQueueItem?.patient?.fullName || 'No patient selected';
 
   return (
-    <section>
-      <h3>Consultation</h3>
+    <section className="app-card p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Consultation Form</h2>
+          <p className="mt-1 text-sm text-slate-500">Patient: {selectedPatientName}</p>
+        </div>
+        <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Live Draft</span>
+      </div>
 
-      <label>
-        Diagnosis
+      <div className="mt-5">
+        <label className="field-label" htmlFor="consultation-diagnosis">
+          <FileText size={14} />
+          Diagnosis
+        </label>
         <textarea
+          id="consultation-diagnosis"
           value={form.diagnosis}
-          onChange={(e) => setForm((prev) => ({ ...prev, diagnosis: e.target.value }))}
+          onChange={(event) => setForm((prev) => ({ ...prev, diagnosis: event.target.value }))}
           rows={4}
+          placeholder="Enter diagnosis summary..."
         />
-      </label>
+      </div>
 
-      <div>
-        <h4>Medicines</h4>
+      <div className="mt-5 space-y-3">
+        <p className="field-label mb-0">
+          <Pill size={14} />
+          Medicines
+        </p>
+
         {form.medicines.map((medicine, idx) => (
-          <div key={`${medicine.name}-${idx}`} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <input
-              placeholder="Medicine"
-              value={medicine.name}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  medicines: prev.medicines.map((m, i) => (i === idx ? { ...m, name: e.target.value } : m)),
-                }))
-              }
-            />
-            <input
-              placeholder="Dosage"
-              value={medicine.dosage}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  medicines: prev.medicines.map((m, i) => (i === idx ? { ...m, dosage: e.target.value } : m)),
-                }))
-              }
-            />
-            <input
-              placeholder="Frequency"
-              value={medicine.frequency}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  medicines: prev.medicines.map((m, i) => (i === idx ? { ...m, frequency: e.target.value } : m)),
-                }))
-              }
-            />
-            <button type="button" onClick={() => onRemoveMedicine(idx)}>
-              Remove
-            </button>
+          <div key={`consult-medicine-${idx}`} className="rounded-2xl border border-medical-border bg-slate-50 p-3">
+            <div className="grid gap-3 md:grid-cols-3">
+              <input
+                placeholder="Medicine"
+                value={medicine.name}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    medicines: prev.medicines.map((item, i) => (i === idx ? { ...item, name: event.target.value } : item)),
+                  }))
+                }
+              />
+              <input
+                placeholder="Dosage"
+                value={medicine.dosage}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    medicines: prev.medicines.map((item, i) => (i === idx ? { ...item, dosage: event.target.value } : item)),
+                  }))
+                }
+              />
+              <input
+                placeholder="Frequency"
+                value={medicine.frequency}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    medicines: prev.medicines.map((item, i) => (i === idx ? { ...item, frequency: event.target.value } : item)),
+                  }))
+                }
+              />
+            </div>
+
+            <div className="mt-3 flex justify-end">
+              <button type="button" className="btn-danger" onClick={() => onRemoveMedicine(idx)} disabled={form.medicines.length === 1}>
+                <Trash2 size={14} />
+                Remove
+              </button>
+            </div>
           </div>
         ))}
-        <button type="button" onClick={onAddMedicine}>
+
+        <button type="button" className="btn-secondary" onClick={onAddMedicine}>
+          <Plus size={15} />
           Add Medicine
         </button>
       </div>
 
-      <div>
-        <h4>Select Tests</h4>
-        {availableTests.map((test) => (
-          <label key={test} style={{ display: 'block' }}>
-            <input
-              type="checkbox"
-              checked={form.tests.includes(test)}
-              onChange={() => onToggleTest(test)}
-            />
-            {test}
-          </label>
-        ))}
+      <div className="mt-5">
+        <label className="field-label" htmlFor="consultation-notes">
+          <FileText size={14} />
+          Notes
+        </label>
+        <textarea
+          id="consultation-notes"
+          value={form.notes}
+          onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+          rows={3}
+          placeholder="Enter treatment notes and follow-up instructions..."
+        />
       </div>
 
-      <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-        <button type="button" onClick={onSaveVisit} disabled={saving}>
-          {saving ? 'Saving...' : 'Save Visit'}
+      <div className="mt-5">
+        <p className="field-label mb-2">
+          <FlaskConical size={14} />
+          Suggested Tests
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {availableTests.map((test) => {
+            const selected = form.tests.includes(test);
+            return (
+              <button
+                key={test}
+                type="button"
+                onClick={() => onToggleTest(test)}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-medical-primary/30 ${
+                  selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                }`}
+              >
+                {test}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-wrap gap-3">
+        <button type="button" className="btn-primary" onClick={onSaveVisit} disabled={saving}>
+          <Send size={15} />
+          {saving ? 'Submitting...' : 'Submit Prescription'}
         </button>
-        <button type="button" onClick={onGeneratePdf}>
-          Generate Prescription PDF
+        <button type="button" className="btn-secondary" onClick={onGeneratePdf}>
+          Generate PDF
         </button>
       </div>
     </section>

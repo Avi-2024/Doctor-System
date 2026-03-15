@@ -1,0 +1,194 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --medical-primary: #2563eb;
+    --medical-secondary: #0ea5e9;
+    --medical-bg: #f1f5f9;
+    --medical-card: #ffffff;
+    --medical-sidebar: #0f172a;
+    --medical-border: #e2e8f0;
+    --medical-text-primary: #1e293b;
+    --medical-text-secondary: #64748b;
+    --medical-success: #10b981;
+    --medical-warning: #f59e0b;
+    --medical-danger: #ef4444;
+  }
+
+  * {
+    @apply box-border;
+  }
+
+  html,
+  body,
+  #root {
+    @apply m-0 min-h-full;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    @apply bg-medical-background text-slate-800 antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p {
+    @apply m-0;
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  input,
+  select,
+  textarea {
+    @apply w-full rounded-2xl border border-medical-border bg-white px-4 py-2 text-sm text-slate-700 outline-none transition focus:border-medical-primary focus:ring-2 focus:ring-medical-primary/20;
+  }
+
+  textarea {
+    @apply min-h-[110px] resize-y;
+  }
+}
+
+@layer components {
+  .app-card {
+    @apply rounded-2xl border border-medical-border bg-white shadow-soft;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-medical-primary px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:scale-100 hover:bg-blue-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-medical-primary/30 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-medical-border bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:scale-100 hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-medical-primary/30 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .icon-button {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-medical-border bg-white text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-medical-primary/30;
+  }
+
+  .field-label {
+    @apply mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500;
+  }
+
+  .page-title {
+    @apply text-2xl font-semibold text-slate-900;
+  }
+
+  .page-subtitle {
+    @apply mt-2 text-sm text-slate-500;
+  }
+
+  .status-chip {
+    @apply inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold;
+  }
+
+  .status-chip.waiting,
+  .status-chip.pending {
+    @apply border-amber-200 bg-amber-50 text-amber-700;
+  }
+
+  .status-chip.confirmed {
+    @apply border-sky-200 bg-sky-50 text-sky-700;
+  }
+
+  .status-chip.completed {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-700;
+  }
+
+  .status-chip.cancelled {
+    @apply border-rose-200 bg-rose-50 text-rose-700;
+  }
+
+  /* Compatibility styles for non-redesigned routes */
+  .module-card,
+  .panel {
+    @apply app-card p-6;
+  }
+
+  .module-kicker {
+    @apply text-xs font-semibold uppercase tracking-[0.08em] text-slate-500;
+  }
+
+  .module-copy {
+    @apply mt-2 text-sm text-slate-500;
+  }
+
+  .panel-title {
+    @apply text-lg font-semibold text-slate-900;
+  }
+
+  .form-grid,
+  .field-stack,
+  .reception-page {
+    @apply grid gap-4;
+  }
+
+  .input-wrap {
+    @apply relative;
+  }
+
+  .input-icon {
+    @apply pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400;
+  }
+
+  .input-wrap input {
+    @apply pl-9;
+  }
+
+  .action-row {
+    @apply flex flex-wrap gap-3;
+  }
+
+  .btn-outline {
+    @apply btn-secondary;
+  }
+
+  .reception-grid {
+    @apply grid gap-4 lg:grid-cols-2;
+  }
+
+  .flash-message {
+    @apply mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700;
+  }
+
+  .auth-page {
+    @apply grid min-h-screen place-items-center p-4;
+  }
+
+  .auth-card {
+    @apply w-full max-w-md rounded-2xl border border-medical-border bg-white p-6 shadow-soft;
+  }
+
+  .auth-subtitle {
+    @apply mt-2 text-sm text-slate-500;
+  }
+
+  .auth-actions {
+    @apply mt-4 grid gap-4;
+  }
+
+  .auth-actions label {
+    @apply grid gap-2 text-sm font-medium text-slate-700;
+  }
+}

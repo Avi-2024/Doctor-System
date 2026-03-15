@@ -95,19 +95,25 @@ function ReceptionistDashboardPage() {
     });
 
   return (
-    <div onKeyDown={(e) => {
-      if (e.altKey && e.key.toLowerCase() === 'r') quickRegister();
-      if (e.altKey && e.key.toLowerCase() === 'b') quickBook();
-      if (e.altKey && e.key.toLowerCase() === 'v') saveVitals();
-      if (e.altKey && e.key.toLowerCase() === 'w') markStatus('waiting');
-      if (e.altKey && e.key.toLowerCase() === 'c') markStatus('completed');
-      if (e.altKey && e.key.toLowerCase() === 'm') savePayment();
-    }}>
-      <h2>Receptionist Fast Desk</h2>
-      <p>Minimal clicks. Keyboard shortcuts: Alt+R/B/V/W/C/M</p>
-      {flash && <p>{flash}</p>}
+    <div
+      className="reception-page"
+      onKeyDown={(e) => {
+        if (e.altKey && e.key.toLowerCase() === 'r') quickRegister();
+        if (e.altKey && e.key.toLowerCase() === 'b') quickBook();
+        if (e.altKey && e.key.toLowerCase() === 'v') saveVitals();
+        if (e.altKey && e.key.toLowerCase() === 'w') markStatus('waiting');
+        if (e.altKey && e.key.toLowerCase() === 'c') markStatus('completed');
+        if (e.altKey && e.key.toLowerCase() === 'm') savePayment();
+      }}
+    >
+      <section className="module-card">
+        <p className="module-kicker">Front Desk</p>
+        <h3>Receptionist Fast Desk</h3>
+        <p className="module-copy">Minimal clicks. Keyboard shortcuts: Alt+R/B/V/W/C/M</p>
+        {flash && <p className="flash-message">{flash}</p>}
+      </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="reception-grid">
         <QuickPatientRegistration form={registrationForm} setForm={setRegistrationForm} onSubmit={quickRegister} loading={registerLoading} />
         <AppointmentBookingPanel form={bookingForm} setForm={setBookingForm} onSubmit={quickBook} loading={bookLoading} />
         <VitalsEntryPanel form={vitalsForm} setForm={setVitalsForm} onSubmit={saveVitals} loading={vitalsLoading} />

@@ -8,6 +8,7 @@ import AppointmentsPage from '../pages/Appointments/AppointmentsPage';
 import PatientsPage from '../pages/Patients/PatientsPage';
 import BillingPage from '../pages/Billing/BillingPage';
 import PrescriptionsPage from '../pages/Prescriptions/PrescriptionsPage';
+import PrescriptionPage from '../pages/Prescriptions/PrescriptionPage';
 import SettingsPage from '../pages/Settings/SettingsPage';
 import DoctorDashboardPage from '../pages/Doctor/DoctorDashboardPage';
 import ConsultationPage from '../pages/Doctor/ConsultationPage';
@@ -38,6 +39,7 @@ function AppRouter() {
       <Route element={<ProtectedRoute allowedRoles={['CLINIC_OWNER', 'DOCTOR']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/prescriptions" element={<PrescriptionsPage />} />
+          <Route path="/prescription/new" element={<PrescriptionPage />} />
           <Route path="/doctor/consultation" element={<ConsultationPage />} />
         </Route>
       </Route>

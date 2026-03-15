@@ -26,17 +26,26 @@ function LoginPage() {
   };
 
   return (
-    <div>
-      <h1>Login</h1>
-      <select value={role} onChange={(e) => setRole(e.target.value)}>
-        <option value="CLINIC_OWNER">Clinic Owner</option>
-        <option value="DOCTOR">Doctor</option>
-        <option value="RECEPTIONIST">Receptionist</option>
-      </select>
-      <button type="button" onClick={handleMockLogin}>
-        Sign In (Demo)
-      </button>
-    </div>
+    <main className="auth-page">
+      <section className="auth-card">
+        <p className="module-kicker">Clinic Access</p>
+        <h1>Sign in to Doctor System</h1>
+        <p className="auth-subtitle">Choose role and open your workspace.</p>
+        <div className="auth-actions">
+          <label>
+            Role
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="CLINIC_OWNER">Clinic Owner</option>
+              <option value="DOCTOR">Doctor</option>
+              <option value="RECEPTIONIST">Receptionist</option>
+            </select>
+          </label>
+          <button type="button" onClick={handleMockLogin}>
+            Sign In (Demo)
+          </button>
+        </div>
+      </section>
+    </main>
   );
 }
 
