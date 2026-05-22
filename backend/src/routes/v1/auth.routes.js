@@ -9,12 +9,19 @@ const router = express.Router();
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 
-router.get('/me', jwtAuth, (req, res) => {
-  return res.status(200).json({ user: req.user });
-});
+// Reads refresh_token cookie — no jwtAuth needed
+router.post('/refresh', authController.refresh);
 
-router.get('/admin-only', jwtAuth, allowRoles(ROLES.SUPER_ADMIN, ROLES.CLINIC_OWNER), (req, res) =>
-  res.status(200).json({ message: 'Access granted', role: req.auth.role })
+// Requires valid access_token cookie to identify user for token invalidation
+router.post('/logout', jwtAuth, authController.logout);
+
+router.get('/me', jwtAuth, authController.me);
+
+router.get(
+  '/admin-only',
+  jwtAuth,
+  allowRoles(ROLES.SUPER_ADMIN, ROLES.CLINIC_OWNER),
+  (req, res) => res.status(200).json({ success: true, data: { role: req.auth.role } })
 );
 
 module.exports = router;

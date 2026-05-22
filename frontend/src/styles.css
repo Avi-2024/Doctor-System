@@ -6,13 +6,33 @@
 
 @layer base {
   :root {
+    /* Premium SaaS color tokens — single source of truth */
+    --bg-main: 244 247 251;
+    --bg-surface: 255 255 255;
+    --bg-sidebar: 8 17 32;
+
+    --ink-primary: 15 23 42;
+    --ink-secondary: 100 116 139;
+    --ink-muted: 148 163 184;
+
+    --brand-500: 59 130 246;
+    --brand-600: 37 99 235;
+    --brand-700: 29 78 216;
+
+    --success: 16 185 129;
+    --warning: 245 158 11;
+    --danger: 239 68 68;
+
+    --border-soft: 148 163 184;
+
+    /* Legacy aliases — keep .jsx pages working */
     --medical-primary: #2563eb;
     --medical-secondary: #0ea5e9;
-    --medical-bg: #f1f5f9;
+    --medical-bg: #f4f7fb;
     --medical-card: #ffffff;
-    --medical-sidebar: #0f172a;
+    --medical-sidebar: #081120;
     --medical-border: #e2e8f0;
-    --medical-text-primary: #1e293b;
+    --medical-text-primary: #0f172a;
     --medical-text-secondary: #64748b;
     --medical-success: #10b981;
     --medical-warning: #f59e0b;
@@ -30,17 +50,19 @@
   }
 
   body {
-    font-family: 'Inter', sans-serif;
-    @apply bg-medical-background text-slate-800 antialiased;
+    font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
+    color: rgb(var(--ink-primary));
+    background-color: rgb(var(--bg-main));
+    background-image:
+      radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(6, 182, 212, 0.06), transparent 25%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  p {
+  h1, h2, h3, h4, h5, h6, p {
     @apply m-0;
   }
 
@@ -48,55 +70,98 @@
     @apply text-inherit no-underline;
   }
 
-  button,
-  input,
-  select,
-  textarea {
+  button, input, select, textarea {
     font: inherit;
   }
 
-  input,
+  /* Default input only applies to bare elements; component-level styles override */
+  input:not([type='checkbox']):not([type='radio']):not([type='file']),
   select,
   textarea {
-    @apply w-full rounded-2xl border border-medical-border bg-white px-4 py-2 text-sm text-slate-700 outline-none transition focus:border-medical-primary focus:ring-2 focus:ring-medical-primary/20;
+    @apply w-full rounded-lg border border-border bg-white px-4 py-2.5 text-sm text-ink-primary outline-none transition-all duration-200 placeholder:text-ink-muted focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10;
   }
 
   textarea {
     @apply min-h-[110px] resize-y;
   }
+
+  ::selection {
+    background-color: rgba(37, 99, 235, 0.18);
+  }
+
+  /* Custom scrollbar — subtle, premium feel */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.5);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
 }
 
 @layer components {
+  /* Premium glass surface */
+  .glass {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+  }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(148, 163, 184, 0.08) 0%,
+      rgba(148, 163, 184, 0.16) 50%,
+      rgba(148, 163, 184, 0.08) 100%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+
+  /* ─── LEGACY component classes (keep existing .jsx pages working) ─── */
   .app-card {
     @apply rounded-2xl border border-medical-border bg-white shadow-soft;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-medical-primary px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:scale-100 hover:bg-blue-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-medical-primary/30 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-btn bg-gradient-to-br from-brand-600 to-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-glow transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:brightness-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-medical-border bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:scale-100 hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-medical-primary/30 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-btn border border-border bg-white px-4 py-2.5 text-sm font-semibold text-ink-primary transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-ink-muted/40 hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/15 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-btn border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition-all duration-200 ease-premium hover:bg-red-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-200/40 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .icon-button {
-    @apply inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-medical-border bg-white text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-medical-primary/30;
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-btn border border-border bg-white text-ink-secondary transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:bg-slate-50 hover:text-ink-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-500/15;
   }
 
   .field-label {
-    @apply mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500;
+    @apply mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-ink-secondary;
   }
 
   .page-title {
-    @apply text-2xl font-semibold text-slate-900;
+    @apply text-page text-ink-primary;
   }
 
   .page-subtitle {
-    @apply mt-2 text-sm text-slate-500;
+    @apply mt-2 text-sm text-ink-secondary;
   }
 
   .status-chip {
@@ -120,22 +185,21 @@
     @apply border-rose-200 bg-rose-50 text-rose-700;
   }
 
-  /* Compatibility styles for non-redesigned routes */
   .module-card,
   .panel {
     @apply app-card p-6;
   }
 
   .module-kicker {
-    @apply text-xs font-semibold uppercase tracking-[0.08em] text-slate-500;
+    @apply text-xs font-semibold uppercase tracking-[0.08em] text-ink-secondary;
   }
 
   .module-copy {
-    @apply mt-2 text-sm text-slate-500;
+    @apply mt-2 text-sm text-ink-secondary;
   }
 
   .panel-title {
-    @apply text-lg font-semibold text-slate-900;
+    @apply text-lg font-semibold text-ink-primary;
   }
 
   .form-grid,
@@ -149,7 +213,7 @@
   }
 
   .input-icon {
-    @apply pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400;
+    @apply pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted;
   }
 
   .input-wrap input {
@@ -177,11 +241,11 @@
   }
 
   .auth-card {
-    @apply w-full max-w-md rounded-2xl border border-medical-border bg-white p-6 shadow-soft;
+    @apply w-full max-w-md rounded-card border border-border bg-white p-6 shadow-soft;
   }
 
   .auth-subtitle {
-    @apply mt-2 text-sm text-slate-500;
+    @apply mt-2 text-sm text-ink-secondary;
   }
 
   .auth-actions {
@@ -189,6 +253,6 @@
   }
 
   .auth-actions label {
-    @apply grid gap-2 text-sm font-medium text-slate-700;
+    @apply grid gap-2 text-sm font-medium text-ink-primary;
   }
 }

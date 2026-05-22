@@ -52,6 +52,11 @@ const userSchema = new Schema(
     lastLoginAt: {
       type: Date,
     },
+    refreshTokenHash: {
+      type: String,
+      default: null,
+      select: false,
+    },
   },
   {
     timestamps: true,

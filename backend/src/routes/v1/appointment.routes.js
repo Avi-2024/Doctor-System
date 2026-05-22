@@ -1,6 +1,7 @@
 const express = require('express');
 const appointmentController = require('../../controllers/appointment/appointment.controller');
 const { jwtAuth } = require('../../middleware/auth/jwtAuth.middleware');
+const { injectClinicFromAuth } = require('../../middleware/tenant/clinicScope.middleware');
 const { allowRoles } = require('../../middleware/rbac/roleGuard.middleware');
 const { ROLES } = require('../../utils/constants/roles');
 const {
@@ -14,6 +15,7 @@ const router = express.Router();
 router.post(
   '/schedules',
   jwtAuth,
+  injectClinicFromAuth,
   allowRoles(ROLES.SUPER_ADMIN, ROLES.CLINIC_OWNER, ROLES.STAFF),
   validateUpsertDoctorSchedule,
   appointmentController.upsertDoctorSchedule
@@ -22,6 +24,7 @@ router.post(
 router.post(
   '/book',
   jwtAuth,
+  injectClinicFromAuth,
   allowRoles(ROLES.SUPER_ADMIN, ROLES.CLINIC_OWNER, ROLES.STAFF, ROLES.DOCTOR),
   validateBookAppointment,
   appointmentController.bookAppointment

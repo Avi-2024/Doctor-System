@@ -1,6 +1,7 @@
 const express = require('express');
 const billingController = require('../../controllers/billing/billing.controller');
 const { jwtAuth } = require('../../middleware/auth/jwtAuth.middleware');
+const { injectClinicFromAuth } = require('../../middleware/tenant/clinicScope.middleware');
 const { allowRoles } = require('../../middleware/rbac/roleGuard.middleware');
 const { ROLES } = require('../../utils/constants/roles');
 const {
@@ -14,6 +15,7 @@ const router = express.Router();
 router.post(
   '/',
   jwtAuth,
+  injectClinicFromAuth,
   allowRoles(ROLES.SUPER_ADMIN, ROLES.CLINIC_OWNER, ROLES.STAFF),
   validateCreateBilling,
   billingController.createBilling
@@ -30,6 +32,7 @@ router.post(
 router.get(
   '/reports/daily',
   jwtAuth,
+  injectClinicFromAuth,
   allowRoles(ROLES.SUPER_ADMIN, ROLES.CLINIC_OWNER, ROLES.STAFF),
   validateReportQuery,
   billingController.getDailyReport
@@ -38,6 +41,7 @@ router.get(
 router.get(
   '/reports/monthly',
   jwtAuth,
+  injectClinicFromAuth,
   allowRoles(ROLES.SUPER_ADMIN, ROLES.CLINIC_OWNER, ROLES.STAFF),
   validateReportQuery,
   billingController.getMonthlyReport
