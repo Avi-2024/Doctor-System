@@ -1,55 +1,56 @@
+/**
+ * Express Application
+ * Configures secure API middleware.
+ */
+
+const compression = require('compression');
+const cookieParser = require('cookie-parser');
+const cors = require('cors');
 const express = require('express');
 const helmet = require('helmet');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const v1Routes = require('./routes/v1');
-const { errorHandler } = require('./middleware/error/errorHandler.middleware');
+const rateLimit = require('express-rate-limit');
+const modules = require('./modules');
+const { env } = require('./config/env');
+const { ping } = require('./database/prisma');
+const { requestId } = require('./common/middleware/requestId');
+const { requestLogger } = require('./common/middleware/requestLogger');
+const { notFound, errorHandler } = require('./common/middleware/errorHandler');
+const { successResponse, errorResponse } = require('./common/utils/response');
+const { attachSentryErrorHandler } = require('./config/sentry');
 
 const app = express();
+const origins = env.CORS_ALLOWED_ORIGINS.split(',').map((value) => value.trim()).filter(Boolean);
+const authRateLimit = rateLimit({ windowMs: env.RATE_LIMIT_WINDOW_MS, max: env.AUTH_RATE_LIMIT_MAX, standardHeaders: true, legacyHeaders: false });
 
-// ─── Security headers ─────────────────────────────────────────────────────────
+// Validate request origin.
+const validateOrigin = (origin, callback) => callback(null, !origin || origins.includes(origin));
+
+app.set('trust proxy', env.TRUST_PROXY);
+app.use(requestId);
+app.use(requestLogger);
 app.use(helmet());
-
-// ─── CORS — must come before routes, credentials required for cookies ─────────
-const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
-  ? process.env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-  : ['http://localhost:5173', 'http://localhost:3000'];
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (curl, Postman, mobile apps)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error(`CORS: origin ${origin} not allowed`));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
-
-// ─── Cookie parser — must come before routes ──────────────────────────────────
+app.use(compression());
+app.use(cors({ origin: validateOrigin, credentials: true }));
 app.use(cookieParser());
+app.use(rateLimit({ windowMs: env.RATE_LIMIT_WINDOW_MS, max: env.RATE_LIMIT_MAX, standardHeaders: true, legacyHeaders: false }));
+app.use('/api/v1/whatsapp/webhook', express.raw({ type: '*/*' }));
+app.use(express.json({ limit: env.JSON_BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: env.JSON_BODY_LIMIT }));
 
-// ─── Body parsing ─────────────────────────────────────────────────────────────
-// Raw body preserved for Razorpay webhook signature verification
-app.use('/api/v1/subscriptions/razorpay/webhook', express.raw({ type: '*/*' }));
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// ─── Health check ─────────────────────────────────────────────────────────────
-app.get('/health', (req, res) => res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() }));
-
-// ─── API routes ───────────────────────────────────────────────────────────────
-app.use('/api/v1', v1Routes);
-
-// ─── 404 handler ──────────────────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ success: false, message: `Route ${req.method} ${req.path} not found` });
+app.get('/health', (req, res) => successResponse(res, 'Service healthy', { service: env.APP_NAME, requestId: req.requestId }));
+app.get('/health/ready', async (req, res) => {
+  try {
+    await ping();
+    return successResponse(res, 'Service ready', { database: 'mysql' });
+  } catch (error) {
+    return errorResponse(res, 'Service dependencies unavailable', 503, { database: 'disconnected' });
+  }
 });
 
-// ─── Global error handler ─────────────────────────────────────────────────────
+app.use('/api/v1/auth', authRateLimit);
+app.use('/api/v1', modules);
+app.use(notFound);
+attachSentryErrorHandler(app);
 app.use(errorHandler);
 
 module.exports = app;

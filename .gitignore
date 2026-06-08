@@ -1,129 +1,66 @@
-# ═════════════════════════════════════════════════════════════
-# NODE MODULES & DEPENDENCIES
-# ═════════════════════════════════════════════════════════════
+# Dependencies
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 .pnpm-store/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
 
-# ═════════════════════════════════════════════════════════════
-# ENVIRONMENT VARIABLES
-# ═════════════════════════════════════════════════════════════
+# Environment files
 .env
 .env.local
 .env.*.local
 .env.development.local
 .env.test.local
 .env.production.local
+!.env.example
 
-# ═════════════════════════════════════════════════════════════
-# BUILD & DIST
-# ═════════════════════════════════════════════════════════════
+# Builds and caches
 dist/
 build/
-.next/
 out/
-*.tsbuildinfo
+.next/
 .vite/
+.cache/
+.turbo/
+*.tsbuildinfo
 
-# ═════════════════════════════════════════════════════════════
-# IDE & EDITOR
-# ═════════════════════════════════════════════════════════════
-.vscode/
-.idea/
-*.swp
-*.swo
-*.swn
-*~
-.DS_Store
-.sublime-workspace
-.sublime-project
-*.sublime-workspace
-*.sublime-project
-
-# ═════════════════════════════════════════════════════════════
-# OS FILES
-# ═════════════════════════════════════════════════════════════
-.DS_Store
-Thumbs.db
-Desktop.ini
-.directory
-*.bak
-
-# ═════════════════════════════════════════════════════════════
-# COVERAGE & TESTING
-# ═════════════════════════════════════════════════════════════
+# Test output
 coverage/
 .nyc_output/
 *.lcov
 .jest-cache/
 .vitest/
 
-# ═════════════════════════════════════════════════════════════
-# LOGS
-# ═════════════════════════════════════════════════════════════
+# Logs and runtime files
 logs/
 *.log
 *.log.*
+*.pid
+*.pid.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# ═════════════════════════════════════════════════════════════
-# DATABASES
-# ═════════════════════════════════════════════════════════════
+# Local data and uploads
+uploads/
 *.db
 *.sqlite
 *.sqlite3
 *.sql
-
-# ═════════════════════════════════════════════════════════════
-# TEMPORARY FILES
-# ═════════════════════════════════════════════════════════════
+!backend/src/database/migrations/*.sql
 tmp/
 temp/
 *.tmp
 *.temp
 
-# ═════════════════════════════════════════════════════════════
-# CACHE
-# ═════════════════════════════════════════════════════════════
-.cache/
-.eslintcache
-.parcel-cache
-.next
-dist
-out
+# Editors and operating systems
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
 
-# ═════════════════════════════════════════════════════════════
-# BACKEND SPECIFIC
-# ═════════════════════════════════════════════════════════════
-backend/node_modules/
-backend/dist/
-backend/.env
-backend/logs/
-backend/uploads/
-backend/.DS_Store
-
-# ═════════════════════════════════════════════════════════════
-# FRONTEND SPECIFIC
-# ═════════════════════════════════════════════════════════════
-frontend/node_modules/
-frontend/dist/
-frontend/.env
-frontend/.env.local
-frontend/build/
-frontend/.vercelignore
-
-# ═════════════════════════════════════════════════════════════
-# MISCELLANEOUS
-# ═════════════════════════════════════════════════════════════
+# Tool state
 .zencoder/
 .zenflow/
-*.pid
-*.seed
-*.pid.lock
-.turbo/

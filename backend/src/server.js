@@ -1,35 +1,49 @@
-const dotenv = require('dotenv');
-const mongoose = require('mongoose');
+/**
+ * HTTP Server Entrypoint
+ * Starts Express, MySQL, and Socket.IO.
+ */
+
+const http = require('http');
+const { initSentry } = require('./config/sentry');
+
+initSentry();
+
 const app = require('./app');
+const { env } = require('./config/env');
+const { ping, close } = require('./database/prisma');
+const { configureSocket } = require('./config/socket');
+const logger = require('./common/utils/logger');
 
-dotenv.config();
+let server;
+let io;
 
-const PORT = Number(process.env.PORT) || 8080;
-const MONGODB_URI = process.env.MONGODB_URI;
-const MONGODB_DB_NAME = process.env.MONGODB_DB_NAME;
+// Start HTTP server.
+const start = async () => {
+  await ping();
+  server = http.createServer(app);
+  io = configureSocket(server);
+  server.listen(env.PORT, () => logger.info('HTTP server listening', { port: env.PORT }));
+};
 
-const connectMongo = async () => {
-  if (!MONGODB_URI) {
-    console.warn('[startup] MONGODB_URI is empty. API will start without a database connection.');
-    return;
-  }
+// Gracefully close runtime.
+const shutdown = async (signal) => {
+  logger.info('Shutdown requested', { signal });
+  if (io) await new Promise((resolve) => io.close(resolve));
+  if (server) await new Promise((resolve) => server.close(resolve));
+  await close();
+};
 
+// Start server with explicit error handling.
+const run = async () => {
   try {
-    await mongoose.connect(MONGODB_URI, {
-      dbName: MONGODB_DB_NAME || undefined,
-    });
-    console.log('[startup] MongoDB connected');
+    await start();
   } catch (error) {
-    console.error(`[startup] MongoDB connection failed: ${error.message}`);
+    logger.error('Startup failed', { error: error.message });
+    process.exitCode = 1;
   }
 };
 
-const startServer = async () => {
-  await connectMongo();
+run();
 
-  app.listen(PORT, () => {
-    console.log(`[startup] Backend listening on http://localhost:${PORT}`);
-  });
-};
-
-startServer();
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));

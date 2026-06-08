@@ -3,6 +3,14 @@ import { generatePrescriptionPdf } from './pdfGenerator';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
+async function parseJson(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}
+
 async function request(path, { method = 'GET', token, body } = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
@@ -13,7 +21,7 @@ async function request(path, { method = 'GET', token, body } = {}) {
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
 
-  const data = await response.json().catch(() => ({}));
+  const data = await parseJson(response);
   if (!response.ok) throw new Error(data.message || 'Request failed');
   return data;
 }
@@ -26,22 +34,37 @@ async function tryOrOffline(apiFn, offlineFn) {
   }
 }
 
+function listItems(payload) {
+  return payload?.data?.items || payload?.items || [];
+}
+
 export const doctorApi = {
   getPatientQueue: ({ clinicId, token }) =>
     tryOrOffline(
-      () => request(`/appointments?clinicId=${clinicId}&status=waiting`, { token }),
-      () => ({ appointments: localAppointments.getQueue() })
+      async () => {
+        const res = await request(`/queue?clinicId=${clinicId}&status=WAITING`, { token });
+        const items = listItems(res);
+        return { appointments: items, queue: items };
+      },
+      () => ({ appointments: localAppointments.getQueue(), queue: localAppointments.getQueue() })
     ),
 
   getPatientHistory: ({ clinicId, patientId, token }) =>
     tryOrOffline(
-      () => request(`/patients/${patientId}/history?clinicId=${clinicId}`, { token }),
-      () => ({ history: localVisits.getByPatient(patientId) })
+      async () => {
+        const res = await request(`/consultations?clinicId=${clinicId}&patientId=${patientId}`, { token });
+        const items = listItems(res);
+        return { history: items, visits: items };
+      },
+      () => ({ history: localVisits.getByPatient(patientId), visits: localVisits.getByPatient(patientId) })
     ),
 
   saveVisit: ({ clinicId, token, payload }) =>
     tryOrOffline(
-      () => request('/visits', { method: 'POST', token, body: { clinicId, ...payload } }),
+      async () => {
+        const res = await request('/consultations', { method: 'POST', token, body: { clinicId, ...payload } });
+        return { visit: res.data };
+      },
       () => {
         const visit = localVisits.save(payload);
         if (payload.appointmentId) localAppointments.markCompleted(payload.appointmentId);
@@ -51,7 +74,7 @@ export const doctorApi = {
 
   generatePrescriptionPdf: ({ clinicId, visitId, token }) =>
     tryOrOffline(
-      () => request(`/prescriptions/${visitId}/pdf?clinicId=${clinicId}`, { token }),
+      async () => request(`/prescriptions/${visitId}/pdf?clinicId=${clinicId}`, { token }),
       () => {
         const visit = localVisits.getById(visitId);
         if (!visit) throw new Error('Visit not found');

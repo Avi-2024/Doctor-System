@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { CircleDollarSign, ReceiptText } from 'lucide-react';
 
 function PaymentEntryPanel({ form, setForm, onSubmit, loading }) {
@@ -7,11 +8,15 @@ function PaymentEntryPanel({ form, setForm, onSubmit, loading }) {
       <h3 className="panel-title">Payment Entry</h3>
       <form
         className="form-grid"
+
+
+
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit();
         }}
       >
+
         <div className="field-stack">
           <label className="field-label" htmlFor="payment-billing-id">
             <ReceiptText size={14} />
@@ -56,6 +61,7 @@ function PaymentEntryPanel({ form, setForm, onSubmit, loading }) {
             <option value="card">Card</option>
           </select>
         </div>
+
         <button accessKey="m" type="submit" disabled={loading}>
           {loading ? 'Saving...' : 'Save Payment (Alt+M)'}
         </button>
