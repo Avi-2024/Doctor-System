@@ -59,8 +59,8 @@ MVP excludes:
 ## Operating Documents
 
 - [Team Structure](TEAM_STRUCTURE.md)
-- [Development Guidelines](DEVELOPMENT_GUIDELINES.md)
-- [Code Review Guidelines](CODE_REVIEW_GUIDELINES.md)
+- [Development Guidelines](../02-engineering-standards/DEVELOPMENT_GUIDELINES.md)
+- [Code Review Guidelines](../02-engineering-standards/CODE_REVIEW_GUIDELINES.md)
 - [Incident Response Plan](INCIDENT_RESPONSE_PLAN.md)
 - [On-Call Runbook](ON_CALL_RUNBOOK.md)
 - [Monitoring Runbook](MONITORING_RUNBOOK.md)
@@ -84,12 +84,12 @@ MVP excludes:
 
 New engineers must read:
 
-1. `ENGINEERING_HANDBOOK.md`.
-2. `DEVELOPMENT_GUIDELINES.md`.
-3. `CODE_REVIEW_GUIDELINES.md`.
-4. `MVP_SCOPE.md`.
-5. `LAUNCH_READINESS_PLAN.md`.
-6. `TECHNICAL_DEBT_REGISTER.md`.
+1. [Engineering Handbook](ENGINEERING_HANDBOOK.md).
+2. [Development Guidelines](../02-engineering-standards/DEVELOPMENT_GUIDELINES.md).
+3. [Code Review Guidelines](../02-engineering-standards/CODE_REVIEW_GUIDELINES.md).
+4. [MVP Scope](../01-product-launch/MVP_SCOPE.md).
+5. [Launch Readiness Plan](../01-product-launch/LAUNCH_READINESS_PLAN.md).
+6. [Technical Debt Register](../00-executive-reviews/TECHNICAL_DEBT_REGISTER.md).
 
 Then they should:
 
