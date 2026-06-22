@@ -1,0 +1,260 @@
+{
+  "info": {
+    "name": "Doctor System - Phase 2 Auth Core",
+    "description": "Sprint 1 Auth Core collection for backend-new. Uses HTTP-only cookies managed by Postman's cookie jar. Refresh rotation atomically claims the previous token before issuing a replacement. Refresh and logout send the double-submit CSRF token captured from login/refresh responses.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login - Clinic User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clinicId\": \"{{clinicId}}\",\n  \"email\": \"{{clinicUserEmail}}\",\n  \"password\": \"{{clinicUserPassword}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test('success envelope', function () { pm.expect(json.success).to.eql(true); });",
+              "pm.test('login message', function () { pm.expect(json.message).to.eql('Login successful'); });",
+              "pm.test('sanitized user returned', function () {",
+              "  pm.expect(json.data.user).to.have.property('id');",
+              "  pm.expect(json.data.user).to.not.have.property('password_hash');",
+              "});",
+              "pm.test('session returned', function () { pm.expect(json.data.session).to.have.property('sessionId'); });",
+              "pm.test('cookies set', function () {",
+              "  pm.expect(pm.response.headers.get('Set-Cookie')).to.include('access_token=');",
+              "  pm.expect(pm.response.headers.get('Set-Cookie')).to.include('refresh_token=');",
+              "  pm.expect(pm.response.headers.get('Set-Cookie')).to.include('csrf_token=');",
+              "});",
+              "const setCookie = pm.response.headers.get('Set-Cookie') || '';",
+              "const csrfMatch = setCookie.match(/csrf_token=([^;,\\s]+)/);",
+              "if (csrfMatch) { pm.collectionVariables.set('csrfToken', csrfMatch[1]); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Current User",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test('current user envelope', function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.message).to.eql('Current user');",
+              "});",
+              "pm.test('roles and permissions are empty in Sprint 1', function () {",
+              "  pm.expect(json.data.roles).to.eql([]);",
+              "  pm.expect(json.data.permissions).to.eql([]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Refresh Session",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-csrf-token",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "refresh"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test('refresh envelope', function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.message).to.eql('Session refreshed');",
+              "});",
+              "pm.test('new session token id returned', function () { pm.expect(json.data.session).to.have.property('refreshTokenId'); });",
+              "pm.test('atomic rotation contract fields exist', function () {",
+              "  pm.expect(json.data.session).to.have.property('sessionId');",
+              "  pm.expect(json.data.session).to.have.property('expiresAt');",
+              "});",
+              "pm.test('csrf token rotated', function () { pm.expect(pm.response.headers.get('Set-Cookie')).to.include('csrf_token='); });",
+              "const setCookie = pm.response.headers.get('Set-Cookie') || '';",
+              "const csrfMatch = setCookie.match(/csrf_token=([^;,\\s]+)/);",
+              "if (csrfMatch) { pm.collectionVariables.set('csrfToken', csrfMatch[1]); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-csrf-token",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/logout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "logout"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test('logout envelope', function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.message).to.eql('Logged out');",
+              "  pm.expect(json.data.loggedOut).to.eql(true);",
+              "});",
+              "pm.collectionVariables.unset('csrfToken');"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login - Invalid Credentials",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clinicId\": \"{{clinicId}}\",\n  \"email\": \"{{clinicUserEmail}}\",\n  \"password\": \"wrong-password\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 401 or validation-safe 400', function () {",
+              "  pm.expect([400, 401]).to.include(pm.response.code);",
+              "});",
+              "const json = pm.response.json();",
+              "pm.test('error envelope', function () { pm.expect(json.success).to.eql(false); });",
+              "pm.test('password is not echoed', function () { pm.expect(pm.response.text()).to.not.include('wrong-password'); });"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "clinicId",
+      "value": "22222222-2222-4222-8222-222222222222"
+    },
+    {
+      "key": "clinicUserEmail",
+      "value": "doctor@example.com"
+    },
+    {
+      "key": "clinicUserPassword",
+      "value": "ValidPassword#123"
+    },
+    {
+      "key": "csrfToken",
+      "value": ""
+    }
+  ]
+}

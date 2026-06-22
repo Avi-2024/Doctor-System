@@ -1,0 +1,391 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model schema_migrations {
+  name        String   @id @db.VarChar(190)
+  executed_at DateTime @default(now())
+}
+
+model audit_logs {
+  id            String   @id @db.Char(36)
+  clinic_id     String?  @db.Char(36)
+  actor_user_id String?  @db.Char(36)
+  action        String   @db.VarChar(120)
+  module_name   String   @db.VarChar(120)
+  resource_type String   @db.VarChar(120)
+  resource_id   String?  @db.Char(36)
+  severity      String   @default("INFO") @db.VarChar(30)
+  request_id    String?  @db.VarChar(128)
+  correlation_id String? @db.Char(36)
+  ip_address    String?  @db.VarChar(64)
+  user_agent    String?  @db.VarChar(512)
+  before_data   Json?
+  after_data    Json?
+  metadata      Json?
+  hash          String?  @db.Char(64)
+  previous_hash String?  @db.Char(64)
+  created_at    DateTime @default(now())
+
+  @@index([clinic_id, created_at])
+  @@index([clinic_id, module_name, action, created_at])
+  @@index([clinic_id, resource_type, resource_id])
+  @@index([actor_user_id])
+  @@index([request_id])
+  @@index([correlation_id])
+}
+
+model audit_chain_state {
+  chain_scope String   @id @db.VarChar(190)
+  latest_hash String?  @db.Char(64)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model users {
+  id            String    @id @db.Char(36)
+  clinic_id     String?   @db.Char(36)
+  full_name     String    @db.VarChar(190)
+  email         String    @db.VarChar(190)
+  login_scope   String    @default("PLATFORM") @db.VarChar(190)
+  phone         String?   @db.VarChar(40)
+  password_hash String    @db.VarChar(255)
+  user_type     String    @db.VarChar(40)
+  status        String    @default("PENDING") @db.VarChar(40)
+  token_version Int       @default(0)
+  last_login_at DateTime?
+  profile       Json?
+  created_by    String?   @db.Char(36)
+  updated_by    String?   @db.Char(36)
+  deleted_by    String?   @db.Char(36)
+  is_deleted    Boolean   @default(false)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  deleted_at    DateTime?
+  refresh_tokens refresh_tokens[]
+  password_reset_tokens password_reset_tokens[]
+  login_attempts login_attempts[]
+  account_lockouts account_lockouts[]
+  user_roles user_roles[]
+  branch_assignments user_branch_assignments[]
+
+  @@unique([clinic_id, email])
+  @@unique([login_scope, email])
+  @@index([clinic_id])
+  @@index([clinic_id, is_deleted])
+  @@index([clinic_id, created_at])
+  @@index([clinic_id, updated_at])
+  @@index([clinic_id, status, is_deleted])
+  @@index([email])
+  @@index([token_version])
+}
+
+model permissions {
+  id               String             @id @db.Char(36)
+  permission_key   String             @unique @db.VarChar(160)
+  module_name      String             @db.VarChar(80)
+  action           String             @db.VarChar(80)
+  description      String?            @db.VarChar(500)
+  is_system        Boolean            @default(true)
+  created_at       DateTime           @default(now())
+  updated_at       DateTime           @updatedAt
+  role_permissions role_permissions[]
+
+  @@index([module_name, action])
+}
+
+model roles {
+  id               String             @id @db.Char(36)
+  clinic_id        String?            @db.Char(36)
+  scope_key        String             @db.VarChar(190)
+  code             String             @db.VarChar(100)
+  name             String             @db.VarChar(190)
+  description      String?            @db.VarChar(500)
+  is_system        Boolean            @default(false)
+  is_platform      Boolean            @default(false)
+  created_by       String?            @db.Char(36)
+  updated_by       String?            @db.Char(36)
+  deleted_by       String?            @db.Char(36)
+  is_deleted       Boolean            @default(false)
+  created_at       DateTime           @default(now())
+  updated_at       DateTime           @updatedAt
+  deleted_at       DateTime?
+  role_permissions role_permissions[]
+  user_roles       user_roles[]
+
+  @@unique([scope_key, code])
+  @@index([clinic_id])
+  @@index([clinic_id, is_deleted])
+  @@index([clinic_id, created_at])
+  @@index([clinic_id, updated_at])
+  @@index([clinic_id, is_system, is_deleted])
+  @@index([scope_key])
+}
+
+model role_permissions {
+  id            String      @id @db.Char(36)
+  clinic_id     String?     @db.Char(36)
+  role_id       String      @db.Char(36)
+  permission_id String      @db.Char(36)
+  scope         String      @default("CLINIC") @db.VarChar(40)
+  created_by    String?     @db.Char(36)
+  updated_by    String?     @db.Char(36)
+  deleted_by    String?     @db.Char(36)
+  is_deleted    Boolean     @default(false)
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+  deleted_at    DateTime?
+  role          roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  permission    permissions @relation(fields: [permission_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([role_id, permission_id, scope])
+  @@index([clinic_id])
+  @@index([clinic_id, is_deleted])
+  @@index([clinic_id, created_at])
+  @@index([clinic_id, updated_at])
+  @@index([permission_id])
+}
+
+model user_roles {
+  id          String    @id @db.Char(36)
+  clinic_id   String?   @db.Char(36)
+  user_id     String    @db.Char(36)
+  role_id     String    @db.Char(36)
+  active_assignment_key String? @unique @db.VarChar(140)
+  assigned_by String?   @db.Char(36)
+  revoked_at  DateTime?
+  revoked_by  String?   @db.Char(36)
+  created_by  String?   @db.Char(36)
+  updated_by  String?   @db.Char(36)
+  deleted_by  String?   @db.Char(36)
+  is_deleted  Boolean   @default(false)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+  user        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  role        roles     @relation(fields: [role_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([clinic_id])
+  @@index([clinic_id, is_deleted])
+  @@index([clinic_id, created_at])
+  @@index([clinic_id, updated_at])
+  @@index([clinic_id, user_id, is_deleted])
+  @@index([clinic_id, user_id, role_id, is_deleted, revoked_at])
+  @@index([user_id, is_deleted])
+  @@index([role_id, is_deleted])
+}
+
+model user_branch_assignments {
+  id          String    @id @db.Char(36)
+  clinic_id   String    @db.Char(36)
+  user_id     String    @db.Char(36)
+  branch_id   String    @db.Char(36)
+  is_primary  Boolean   @default(false)
+  assigned_by String?   @db.Char(36)
+  revoked_at  DateTime?
+  revoked_by  String?   @db.Char(36)
+  created_by  String?   @db.Char(36)
+  updated_by  String?   @db.Char(36)
+  deleted_by  String?   @db.Char(36)
+  is_deleted  Boolean   @default(false)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+  user        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([clinic_id])
+  @@index([clinic_id, is_deleted])
+  @@index([clinic_id, created_at])
+  @@index([clinic_id, updated_at])
+  @@index([clinic_id, user_id, is_deleted])
+  @@index([clinic_id, branch_id, is_deleted])
+}
+
+model refresh_tokens {
+  id                   String    @id @db.Char(36)
+  clinic_id            String?   @db.Char(36)
+  user_id              String    @db.Char(36)
+  session_id           String    @db.Char(36)
+  token_hash           String    @db.Char(64)
+  device_info          Json?
+  ip_address           String?   @db.VarChar(64)
+  user_agent           String?   @db.VarChar(512)
+  status               String    @default("ACTIVE") @db.VarChar(40)
+  expires_at           DateTime
+  last_used_at         DateTime?
+  revoked_at           DateTime?
+  replaced_by_token_id String?   @db.Char(36)
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+  user                 users     @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([token_hash])
+  @@index([clinic_id, user_id, expires_at])
+  @@index([user_id, status, revoked_at])
+  @@index([session_id])
+  @@index([expires_at])
+}
+
+model password_reset_tokens {
+  id         String    @id @db.Char(36)
+  clinic_id  String?   @db.Char(36)
+  user_id    String    @db.Char(36)
+  token_hash String    @db.Char(64)
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime  @default(now())
+  user       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([token_hash])
+  @@index([clinic_id, user_id, expires_at])
+  @@index([expires_at])
+}
+
+model login_attempts {
+  id             String   @id @db.Char(36)
+  clinic_id      String?  @db.Char(36)
+  email          String   @db.VarChar(190)
+  user_id        String?  @db.Char(36)
+  ip_address     String   @db.VarChar(64)
+  user_agent     String?  @db.VarChar(512)
+  success        Boolean
+  failure_reason String?  @db.VarChar(160)
+  attempted_at   DateTime @default(now())
+  user           users?   @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([clinic_id, email, attempted_at])
+  @@index([ip_address, attempted_at])
+  @@index([user_id, attempted_at])
+}
+
+model account_lockouts {
+  id            String    @id @db.Char(36)
+  clinic_id     String?   @db.Char(36)
+  user_id       String?   @db.Char(36)
+  email         String    @db.VarChar(190)
+  ip_address    String?   @db.VarChar(64)
+  reason        String    @db.VarChar(160)
+  locked_until  DateTime
+  unlocked_at   DateTime?
+  created_at    DateTime  @default(now())
+  user          users?    @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([clinic_id, email, locked_until])
+  @@index([user_id, locked_until])
+  @@index([ip_address, locked_until])
+}
+
+model outbox_events {
+  id             String    @id @db.Char(36)
+  event_name     String    @db.VarChar(160)
+  event_version  String    @db.VarChar(20)
+  aggregate_type String    @db.VarChar(120)
+  aggregate_id   String    @db.Char(36)
+  tenant_id      String?   @db.Char(36)
+  correlation_id String?   @db.Char(36)
+  causation_id   String?   @db.Char(36)
+  producer       String    @db.VarChar(120)
+  payload        Json
+  status         String    @default("PENDING") @db.VarChar(40)
+  attempts       Int       @default(0)
+  next_retry_at  DateTime?
+  published_at   DateTime?
+  last_error     String?   @db.VarChar(1000)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@index([tenant_id, status, next_retry_at])
+  @@index([status, next_retry_at])
+  @@index([aggregate_type, aggregate_id])
+  @@index([correlation_id])
+}
+
+model processed_events {
+  id            String   @id @db.Char(36)
+  event_id      String   @db.Char(36)
+  consumer_name String   @db.VarChar(160)
+  status        String   @default("PROCESSED") @db.VarChar(40)
+  processed_at  DateTime @default(now())
+  metadata      Json?
+
+  @@unique([event_id, consumer_name])
+  @@index([consumer_name, processed_at])
+}
+
+model jobs {
+  id              String    @id @db.Char(36)
+  clinic_id       String?   @db.Char(36)
+  job_type        String    @db.VarChar(120)
+  status          String    @default("QUEUED") @db.VarChar(40)
+  priority        String    @default("NORMAL") @db.VarChar(30)
+  payload         Json
+  attempts        Int       @default(0)
+  max_attempts    Int       @default(5)
+  run_at          DateTime  @default(now())
+  locked_by       String?   @db.VarChar(120)
+  locked_at       DateTime?
+  completed_at    DateTime?
+  last_error      String?   @db.VarChar(1000)
+  idempotency_key String?   @db.VarChar(190)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  attempts_log    job_attempts[]
+  dead_letters    dead_letter_jobs[]
+
+  @@unique([idempotency_key])
+  @@index([status, run_at])
+  @@index([clinic_id, status, run_at])
+  @@index([locked_at])
+}
+
+model job_attempts {
+  id             String    @id @db.Char(36)
+  job_id         String    @db.Char(36)
+  clinic_id      String?   @db.Char(36)
+  attempt_number Int
+  status         String    @db.VarChar(40)
+  started_at     DateTime  @default(now())
+  finished_at    DateTime?
+  error_message  String?   @db.VarChar(1000)
+  metadata       Json?
+  job            jobs      @relation(fields: [job_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([job_id, attempt_number])
+  @@index([clinic_id, job_id])
+  @@index([status])
+}
+
+model dead_letter_jobs {
+  id               String    @id @db.Char(36)
+  job_id           String    @db.Char(36)
+  clinic_id        String?   @db.Char(36)
+  failure_reason   String    @db.VarChar(1000)
+  payload          Json
+  failed_at        DateTime  @default(now())
+  resolved_at      DateTime?
+  resolution_notes String?   @db.VarChar(1000)
+  job              jobs      @relation(fields: [job_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([clinic_id, failed_at])
+  @@index([resolved_at])
+}
+
+model dead_letter_events {
+  id              String    @id @db.Char(36)
+  outbox_event_id String?   @db.Char(36)
+  tenant_id       String?   @db.Char(36)
+  event_name      String    @db.VarChar(160)
+  payload         Json
+  failure_reason  String    @db.VarChar(1000)
+  failed_at       DateTime  @default(now())
+  resolved_at     DateTime?
+
+  @@index([tenant_id, failed_at])
+  @@index([event_name])
+  @@index([resolved_at])
+}

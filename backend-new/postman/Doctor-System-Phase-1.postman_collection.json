@@ -1,0 +1,132 @@
+{
+  "info": {
+    "_postman_id": "5bdce7e5-6096-45dc-bc5d-f3d2c4ed1e3f",
+    "name": "Doctor System Phase 1 Foundation",
+    "description": "Phase 1 foundation endpoints for backend-new. Scope is limited to health, readiness, and API metadata.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('returns standard health envelope', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.success).to.eql(true);",
+              "  pm.expect(body.message).to.eql('Service healthy');",
+              "  pm.expect(body.data.service).to.eql('doctor-system-backend-new');",
+              "  pm.expect(body.data.requestId).to.be.a('string');",
+              "  pm.expect(body.meta).to.be.an('object');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Readiness",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health/ready",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health",
+            "ready"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns readiness status code', function () {",
+              "  pm.expect([200, 503]).to.include(pm.response.code);",
+              "});",
+              "",
+              "pm.test('returns standard readiness envelope', function () {",
+              "  const body = pm.response.json();",
+              "  if (pm.response.code === 200) {",
+              "    pm.expect(body.success).to.eql(true);",
+              "    pm.expect(body.message).to.eql('Service ready');",
+              "    pm.expect(body.data.database).to.eql('mysql');",
+              "  } else {",
+              "    pm.expect(body.success).to.eql(false);",
+              "    pm.expect(body.message).to.eql('Service dependencies unavailable');",
+              "    pm.expect(body.data.database).to.eql('disconnected');",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "API Metadata",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/meta",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "meta"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('returns standard metadata envelope', function () {",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.success).to.eql(true);",
+              "  pm.expect(body.message).to.eql('API metadata');",
+              "  pm.expect(body.data.name).to.eql('doctor-system-backend-new');",
+              "  pm.expect(body.data.version).to.eql('v1');",
+              "  pm.expect(body.data.phase).to.eql('foundation');",
+              "  pm.expect(body.data.requestId).to.be.a('string');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
