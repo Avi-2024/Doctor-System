@@ -1,0 +1,469 @@
+{
+  "info": {
+    "name": "Doctor System - Phase 4 Tenants",
+    "description": "Sprint 3 Tenants, Users, Branches, Settings, and Minimal Subscription Foundation collection. Run Auth login first so Postman's cookie jar has access_token and csrf_token. Copy csrf_token into csrfToken.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Clinics",
+      "item": [
+        {
+          "name": "Create Clinic",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{onboardingIdempotencyKey}}" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"clinic_alpha\",\n  \"name\": \"Clinic Alpha\",\n  \"timezone\": \"Asia/Calcutta\",\n  \"owner\": {\n    \"fullName\": \"Clinic Owner\",\n    \"email\": \"owner@example.com\",\n    \"password\": \"StrongPassword123\"\n  },\n  \"branch\": {\n    \"branchCode\": \"main\",\n    \"name\": \"Main Branch\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clinics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "clinics"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 201', function () { pm.expect([200, 201]).to.include(pm.response.code); });",
+                  "const json = pm.response.json();",
+                  "pm.test('success envelope', function () { pm.expect(json.success).to.eql(true); });",
+                  "if (json.data && json.data.clinic) { pm.environment.set('clinicId', json.data.clinic.id); }",
+                  "if (json.data && json.data.branch) { pm.environment.set('branchId', json.data.branch.id); }",
+                  "if (json.data && json.data.owner) { pm.environment.set('targetUserId', json.data.owner.id); }",
+                  "if (json.data && json.data.subscription) { pm.environment.set('subscriptionId', json.data.subscription.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Current Clinic",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clinics/current",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "clinics", "current"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test('clinic returned', function () { pm.expect(json.data.clinic).to.have.property('id'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Suspend Clinic",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-support-reason", "value": "support requested suspension" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SUSPENDED\",\n  \"reason\": \"Controlled suspension test\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clinics/{{clinicId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "clinics", "{{clinicId}}", "status"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('success envelope', function () { pm.expect(pm.response.json().success).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Branches",
+      "item": [
+        {
+          "name": "List Branches",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-clinic-id", "value": "{{clinicId}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "branches"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('branches array', function () { pm.expect(pm.response.json().data.branches).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Branch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchCode\": \"east\",\n  \"name\": \"East Branch\",\n  \"timezone\": \"Asia/Calcutta\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "branches"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.branch) { pm.environment.set('branchId', json.data.branch.id); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users And Invitations",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-clinic-id", "value": "{{clinicId}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('users array', function () { pm.expect(pm.response.json().data.users).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invite User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Invited User\",\n  \"email\": \"invited@example.com\",\n  \"expiresInDays\": 7\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/invite",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "invite"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('invitationId', json.data.invitation.id);",
+                  "pm.environment.set('invitationToken', json.data.invitationToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Accept Invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Origin", "value": "{{frontendOrigin}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{invitationToken}}\",\n  \"password\": \"StrongPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/invitations/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "invitations", "accept"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('sets session shape', function () { pm.expect(pm.response.json().data.user).to.have.property('id'); });",
+                  "const csrfCookie = pm.cookies.get('csrf_token');",
+                  "if (csrfCookie) { pm.environment.set('csrfToken', csrfCookie); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Assign Branch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"isPrimary\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{targetUserId}}/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{targetUserId}}", "branches"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 201', function () { pm.expect([200, 201]).to.include(pm.response.code); });",
+                  "const json = pm.response.json();",
+                  "if (json.data && json.data.assignment) { pm.environment.set('branchAssignmentId', json.data.assignment.id); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Upsert Clinic Timezone",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scope\": \"CLINIC\",\n  \"value\": {\n    \"timezone\": \"Asia/Calcutta\"\n  },\n  \"reason\": \"Initial tenant setup\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings/clinic.timezone",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "settings", "clinic.timezone"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('setting returned', function () { pm.expect(pm.response.json().data.setting.key).to.eql('clinic.timezone'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Settings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-clinic-id", "value": "{{clinicId}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "settings"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('settings array', function () { pm.expect(pm.response.json().data.settings).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        }
+        ,
+        {
+          "name": "Upsert Sensitive WhatsApp Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scope\": \"CLINIC\",\n  \"value\": {\n    \"provider\": \"whatsapp\",\n    \"apiKey\": \"replace-with-test-secret\"\n  },\n  \"reason\": \"Configure messaging provider\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/settings/notifications.whatsapp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "settings", "notifications.whatsapp"]
+            },
+            "description": "Requires settings.update_sensitive and SETTINGS_ENCRYPTION_KEY. Stored value is encrypted at rest; audit/history payloads are redacted."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('sensitive setting returned', function () { pm.expect(pm.response.json().data.setting.key).to.eql('notifications.whatsapp'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "Current Subscription",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "x-clinic-id", "value": "{{clinicId}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/subscriptions/current",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "subscriptions", "current"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('subscription returned', function () { pm.expect(pm.response.json().data.subscription).to.have.property('id'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Negative Examples",
+      "item": [
+        {
+          "name": "Unsafe Request Without CSRF",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchCode\": \"csrf_fail\",\n  \"name\": \"Should Fail\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "branches"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 403', function () { pm.response.to.have.status(403); });",
+                  "pm.test('safe error envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "frontendOrigin", "value": "http://localhost:5173" },
+    { "key": "csrfToken", "value": "" },
+    { "key": "clinicId", "value": "" },
+    { "key": "branchId", "value": "" },
+    { "key": "targetUserId", "value": "" },
+    { "key": "invitationId", "value": "" },
+    { "key": "invitationToken", "value": "" },
+    { "key": "branchAssignmentId", "value": "" },
+    { "key": "subscriptionId", "value": "" },
+    { "key": "onboardingIdempotencyKey", "value": "clinic-alpha-onboarding-001" }
+  ]
+}

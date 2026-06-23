@@ -8,6 +8,7 @@ const { ApiError } = require('../../common/errors/ApiError');
 const { runInTransaction } = require('../../common/repositories/unitOfWork.repository');
 const { env } = require('../../config/env');
 const { recordAudit } = require('../audit/audit.service');
+const { canAuthenticateUserTenant } = require('../clinics/clinics.lifecycle');
 const { SESSION_STATUS, USER_STATUS, USER_TYPE } = require('./auth.constants');
 const { hashToken, verifyPassword } = require('./auth.crypto');
 const { signAccessToken, signRefreshToken, verifyToken } = require('./auth.tokens');
@@ -36,6 +37,9 @@ const normalizeUser = (user) => user ? ({
 
 const isPlatformUser = (user) => user?.user_type === USER_TYPE.SUPER_ADMIN && !user?.clinic_id;
 const sameClinic = (left = null, right = null) => (left || null) === (right || null);
+
+// Checks whether a user's tenant is allowed to authenticate.
+const clinicAllowsAuth = (user) => isPlatformUser(user) || canAuthenticateUserTenant(user);
 
 const createAuthService = ({
   repository = defaultRepository,
@@ -226,6 +230,19 @@ const createAuthService = ({
       });
     }
 
+    if (!clinicAllowsAuth(user)) {
+      return failLogin({
+        clinicId: requestedClinicId,
+        context,
+        email,
+        failureReason: 'CLINIC_UNAVAILABLE',
+        message: 'Account unavailable',
+        metadata: { outcome: 'clinic_unavailable', clinicStatus: user.clinic?.status || null },
+        statusCode: 403,
+        user,
+      });
+    }
+
     if (!isPlatformUser(user) && !clinicId) {
       return failLogin({
         clinicId: requestedClinicId,
@@ -296,7 +313,7 @@ const createAuthService = ({
       }
 
       const user = storedToken.user;
-      if (!user || user.status !== USER_STATUS.ACTIVE || user.is_deleted) {
+      if (!user || user.status !== USER_STATUS.ACTIVE || user.is_deleted || !clinicAllowsAuth(user)) {
         await repository.revokeActiveRefreshTokensByUser(payload.sub, tx);
         throw new ApiError(401, 'Authentication required');
       }
@@ -385,7 +402,7 @@ const createAuthService = ({
       clinicId: payload.clinicId || null,
       isPlatform: isPlatformToken,
     });
-    if (!user || user.status !== USER_STATUS.ACTIVE || user.is_deleted) throw new ApiError(401, 'Authentication required');
+    if (!user || user.status !== USER_STATUS.ACTIVE || user.is_deleted || !clinicAllowsAuth(user)) throw new ApiError(401, 'Authentication required');
     if (user.token_version !== payload.tokenVersion) throw new ApiError(401, 'Authentication required');
     if (!sameClinic(user.clinic_id, payload.clinicId)) throw new ApiError(401, 'Authentication required');
 
@@ -418,7 +435,38 @@ const createAuthService = ({
     };
   };
 
+  const issueSessionForUser = async ({ user = null, userId = null, clinicId = null, context = {} }) => transaction(async (tx) => {
+    const resolvedUser = user || await repository.findUserById({
+      userId,
+      clinicId,
+      isPlatform: false,
+    }, tx);
+    if (!resolvedUser || resolvedUser.status !== USER_STATUS.ACTIVE || resolvedUser.is_deleted || !clinicAllowsAuth(resolvedUser)) {
+      throw new ApiError(401, 'Authentication required');
+    }
+    const tokens = await createTokenPair({ user: resolvedUser, connection: tx, context });
+    await audit({
+      context: { ...context, userId: resolvedUser.id, clinicId: resolvedUser.clinic_id || null },
+      action: AUTH_ACTION.LOGIN_SUCCESS,
+      moduleName: 'auth',
+      resourceType: 'user',
+      resourceId: resolvedUser.id,
+      metadata: { sessionId: tokens.sessionId, source: 'invitation_acceptance' },
+    }, tx);
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: normalizeUser(resolvedUser),
+      session: {
+        sessionId: tokens.sessionId,
+        refreshTokenId: tokens.refreshTokenRecord.id,
+        expiresAt: tokens.refreshTokenRecord.expires_at,
+      },
+    };
+  });
+
   return {
+    issueSessionForUser,
     login,
     logout,
     normalizeUser,

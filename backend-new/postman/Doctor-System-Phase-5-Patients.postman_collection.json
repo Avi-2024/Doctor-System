@@ -1,0 +1,250 @@
+{
+  "info": {
+    "name": "Doctor System - Phase 5 Patients",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "clinicId", "value": "" },
+    { "key": "patientId", "value": "" },
+    { "key": "patientRecordId", "value": "" },
+    { "key": "csrfToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Patients",
+      "item": [
+        {
+          "name": "List Patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/patients?page=1&limit=25"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('returns patients envelope', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.success).to.eql(true);",
+                  "  pm.expect(json.data).to.have.property('patients');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search Patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/patients/search?search=pat&limit=10"
+          }
+        },
+        {
+          "name": "Register Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "patient-register-{{$timestamp}}" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Jane Patient\",\n  \"phone\": \"+1 202 555 0100\",\n  \"email\": \"jane.patient@example.com\",\n  \"gender\": \"FEMALE\",\n  \"dateOfBirth\": \"1990-01-01\",\n  \"bloodGroup\": \"O+\",\n  \"demographics\": {},\n  \"medicalSummary\": {}\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/patients"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('patient created', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.success).to.eql(true);",
+                  "  pm.collectionVariables.set('patientId', json.data.patient.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/patients/{{patientId}}"
+          }
+        },
+        {
+          "name": "Update Patient",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bloodGroup\": \"A+\",\n  \"medicalSummary\": { \"allergyKnown\": true }\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/patients/{{patientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient Records",
+      "item": [
+        {
+          "name": "Create Patient Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"recordType\": \"NOTE\",\n  \"title\": \"Visit note\",\n  \"recordData\": { \"summary\": \"Synthetic clinical note\" }\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/patient-records"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('record created', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "  var json = pm.response.json();",
+                  "  pm.collectionVariables.set('patientRecordId', json.data.record.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Patient Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/patient-records?patientId={{patientId}}"
+          }
+        },
+        {
+          "name": "Get Patient Record",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "url": "{{baseUrl}}/api/v1/patient-records/{{patientRecordId}}"
+          }
+        },
+        {
+          "name": "Archive Patient Record",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"entered in error\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/patient-records/{{patientRecordId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative Checks",
+      "item": [
+        {
+          "name": "Register Patient Missing Idempotency Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Missing Idempotency\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/patients"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('validation fails', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Record With Attachment Count",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrfToken}}" },
+              { "key": "x-clinic-id", "value": "{{clinicId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"recordType\": \"NOTE\",\n  \"title\": \"Invalid attachment\",\n  \"recordData\": {},\n  \"attachmentCount\": 1\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/patient-records"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('attachments deferred', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

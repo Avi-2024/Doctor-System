@@ -33,7 +33,7 @@ const scopeKeyForContext = (context, clinicId = null) => {
   return clinicId || context?.clinicId;
 };
 const scopeRank = (scope) => SCOPE_RANK[scope] || 0;
-const isReservedPermissionKey = (key) => /^platform\.|^system\./.test(String(key || ''));
+const isReservedPermissionKey = (key) => /^platform\.|^system\.|^tenant\./.test(String(key || ''));
 
 const normalizePermission = (permission) => ({
   id: permission.id,

@@ -47,6 +47,307 @@ model audit_chain_state {
   updated_at  DateTime @updatedAt
 }
 
+model clinics {
+  id                         String                 @id @db.Char(36)
+  code                       String                 @unique @db.VarChar(80)
+  name                       String                 @db.VarChar(190)
+  status                     String                 @default("ACTIVE") @db.VarChar(40)
+  timezone                   String                 @default("UTC") @db.VarChar(80)
+  contact                    Json?
+  address                    Json?
+  branding                   Json?
+  owner_user_id              String?                @db.Char(36)
+  onboarding_idempotency_key String?                @unique @db.VarChar(190)
+  onboarding_payload_hash    String?                @db.Char(64)
+  created_by                 String?                @db.Char(36)
+  updated_by                 String?                @db.Char(36)
+  deleted_by                 String?                @db.Char(36)
+  is_deleted                 Boolean                @default(false)
+  created_at                 DateTime               @default(now())
+  updated_at                 DateTime               @updatedAt
+  deleted_at                 DateTime?
+  archived_at                DateTime?
+  owner_user                 users?                 @relation("clinic_owner", fields: [owner_user_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  users                      users[]                @relation("clinic_users")
+  branches                   clinic_branches[]
+  settings                   settings[]             @relation("clinic_settings")
+  setting_history            setting_history[]      @relation("clinic_setting_history")
+  invitations                user_invitations[]
+  subscriptions              clinic_subscriptions[]
+  roles                      roles[]                @relation("clinic_roles")
+  role_permissions           role_permissions[]     @relation("clinic_role_permissions")
+  user_roles                 user_roles[]           @relation("clinic_user_roles")
+  branch_assignments         user_branch_assignments[]
+  refresh_tokens             refresh_tokens[]       @relation("clinic_refresh_tokens")
+  password_reset_tokens      password_reset_tokens[] @relation("clinic_password_reset_tokens")
+  login_attempts             login_attempts[]       @relation("clinic_login_attempts")
+  account_lockouts           account_lockouts[]     @relation("clinic_account_lockouts")
+  patient_code_counters      patient_code_counters[]
+  patient_registration_requests patient_registration_requests[]
+  patients                   patients[]
+  patient_records            patient_records[]
+
+  @@index([status, is_deleted])
+  @@index([owner_user_id])
+  @@index([created_at])
+  @@index([updated_at])
+}
+
+model patient_code_counters {
+  id          String   @id @db.Char(36)
+  clinic_id   String   @db.Char(36)
+  counter_key String   @db.VarChar(80)
+  next_value  Int      @default(1)
+  created_by  String?  @db.Char(36)
+  updated_by  String?  @db.Char(36)
+  is_deleted  Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  clinic      clinics  @relation(fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([clinic_id, counter_key])
+  @@index([clinic_id, updated_at])
+}
+
+model patient_registration_requests {
+  id              String    @id @db.Char(36)
+  clinic_id       String    @db.Char(36)
+  idempotency_key String    @db.VarChar(190)
+  request_hash    String    @db.Char(64)
+  patient_id      String?   @db.Char(36)
+  status          String    @default("IN_PROGRESS") @db.VarChar(40)
+  response_summary Json?
+  created_by      String?   @db.Char(36)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  clinic          clinics   @relation(fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  patient         patients? @relation(fields: [patient_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([clinic_id, idempotency_key])
+  @@index([clinic_id, patient_id])
+  @@index([clinic_id, status, created_at])
+}
+
+model patients {
+  id               String    @id @db.Char(36)
+  clinic_id        String    @db.Char(36)
+  patient_code     String    @db.VarChar(80)
+  full_name        String    @db.VarChar(190)
+  normalized_name  String?   @db.VarChar(190)
+  phone            String?   @db.VarChar(40)
+  normalized_phone String?   @db.VarChar(40)
+  email            String?   @db.VarChar(190)
+  normalized_email String?   @db.VarChar(190)
+  gender           String?   @db.VarChar(40)
+  date_of_birth    DateTime?
+  blood_group      String?   @db.VarChar(20)
+  demographics     Json?
+  medical_summary  Json?
+  status           String    @default("ACTIVE") @db.VarChar(40)
+  archived_at      DateTime?
+  archived_by      String?   @db.Char(36)
+  created_by       String?   @db.Char(36)
+  updated_by       String?   @db.Char(36)
+  deleted_by       String?   @db.Char(36)
+  is_deleted       Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  deleted_at       DateTime?
+  clinic           clinics   @relation(fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  records          patient_records[]
+  registration_requests patient_registration_requests[]
+
+  @@unique([clinic_id, patient_code])
+  @@index([clinic_id, is_deleted, created_at])
+  @@index([clinic_id, status, is_deleted])
+  @@index([clinic_id, updated_at])
+  @@index([clinic_id, normalized_phone, is_deleted])
+  @@index([clinic_id, normalized_email, is_deleted])
+  @@index([clinic_id, normalized_name])
+  @@index([clinic_id, normalized_name, date_of_birth, is_deleted])
+}
+
+model patient_records {
+  id               String    @id @db.Char(36)
+  clinic_id        String    @db.Char(36)
+  patient_id       String    @db.Char(36)
+  record_type      String    @db.VarChar(80)
+  title            String    @db.VarChar(190)
+  record_data      Json
+  recorded_at      DateTime  @default(now())
+  attachment_count Int       @default(0)
+  status           String    @default("ACTIVE") @db.VarChar(40)
+  archived_at      DateTime?
+  archived_by      String?   @db.Char(36)
+  created_by       String?   @db.Char(36)
+  updated_by       String?   @db.Char(36)
+  deleted_by       String?   @db.Char(36)
+  is_deleted       Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  deleted_at       DateTime?
+  clinic           clinics   @relation(fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  patient          patients  @relation(fields: [patient_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([clinic_id, patient_id, created_at])
+  @@index([clinic_id, record_type, recorded_at])
+  @@index([clinic_id, status, is_deleted])
+  @@index([clinic_id, updated_at])
+}
+
+model clinic_branches {
+  id                 String                    @id @db.Char(36)
+  clinic_id          String                    @db.Char(36)
+  branch_code        String                    @db.VarChar(80)
+  name               String                    @db.VarChar(190)
+  timezone           String                    @default("UTC") @db.VarChar(80)
+  contact            Json?
+  address            Json?
+  is_primary         Boolean                   @default(false)
+  primary_branch_key String?                   @unique @db.VarChar(120)
+  status             String                    @default("ACTIVE") @db.VarChar(40)
+  created_by         String?                   @db.Char(36)
+  updated_by         String?                   @db.Char(36)
+  deleted_by         String?                   @db.Char(36)
+  is_deleted         Boolean                   @default(false)
+  created_at         DateTime                  @default(now())
+  updated_at         DateTime                  @updatedAt
+  deleted_at         DateTime?
+  clinic             clinics                   @relation(fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  settings           settings[]
+  branch_assignments user_branch_assignments[]
+
+  @@unique([clinic_id, branch_code])
+  @@index([clinic_id, is_deleted])
+  @@index([clinic_id, status, is_deleted])
+  @@index([clinic_id, is_primary, is_deleted])
+  @@index([clinic_id, updated_at])
+  @@index([clinic_id, name])
+}
+
+model settings {
+  id                 String            @id @db.Char(36)
+  clinic_id          String?           @db.Char(36)
+  branch_id          String?           @db.Char(36)
+  user_id            String?           @db.Char(36)
+  setting_key        String            @db.VarChar(160)
+  value              Json
+  scope              String            @db.VarChar(40)
+  is_encrypted       Boolean           @default(false)
+  status             String            @default("ACTIVE") @db.VarChar(40)
+  active_setting_key String?           @unique @db.VarChar(255)
+  created_by         String?           @db.Char(36)
+  updated_by         String?           @db.Char(36)
+  deleted_by         String?           @db.Char(36)
+  is_deleted         Boolean           @default(false)
+  created_at         DateTime          @default(now())
+  updated_at         DateTime          @updatedAt
+  deleted_at         DateTime?
+  clinic             clinics?          @relation("clinic_settings", fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  branch             clinic_branches?  @relation(fields: [branch_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user               users?            @relation("user_settings", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  history            setting_history[]
+
+  @@index([clinic_id, setting_key, is_deleted])
+  @@index([clinic_id, updated_at])
+  @@index([clinic_id, branch_id, scope, is_deleted])
+  @@index([clinic_id, user_id, scope, is_deleted])
+  @@index([scope, setting_key])
+}
+
+model setting_history {
+  id           String    @id @db.Char(36)
+  setting_id   String    @db.Char(36)
+  clinic_id    String?   @db.Char(36)
+  setting_key  String    @db.VarChar(160)
+  scope        String    @db.VarChar(40)
+  before_value Json?
+  after_value  Json?
+  changed_by   String?   @db.Char(36)
+  change_reason String?  @db.VarChar(500)
+  created_at   DateTime  @default(now())
+  setting      settings  @relation(fields: [setting_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  clinic       clinics?  @relation("clinic_setting_history", fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  changed_by_user users? @relation("setting_changed_by", fields: [changed_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([clinic_id, setting_key, created_at])
+  @@index([clinic_id, changed_by, created_at])
+  @@index([setting_id, created_at])
+}
+
+model user_invitations {
+  id                    String    @id @db.Char(36)
+  clinic_id             String    @db.Char(36)
+  user_id               String?   @db.Char(36)
+  email                 String    @db.VarChar(190)
+  full_name             String    @db.VarChar(190)
+  token_hash            String    @unique @db.Char(64)
+  active_invitation_key String?   @unique @db.VarChar(255)
+  status                String    @default("PENDING") @db.VarChar(40)
+  invited_by            String?   @db.Char(36)
+  expires_at            DateTime
+  accepted_at           DateTime?
+  revoked_at            DateTime?
+  revoked_by            String?   @db.Char(36)
+  resend_count          Int       @default(0)
+  last_sent_at          DateTime?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+  clinic                clinics   @relation(fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user                  users?    @relation("invitation_user", fields: [user_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  inviter               users?    @relation("invitation_inviter", fields: [invited_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([clinic_id, status, expires_at])
+  @@index([clinic_id, email, status])
+  @@index([invited_by])
+  @@index([user_id])
+}
+
+model subscription_plans {
+  id             String                 @id @db.Char(36)
+  code           String                 @unique @db.VarChar(100)
+  name           String                 @db.VarChar(190)
+  status         String                 @default("ACTIVE") @db.VarChar(40)
+  price_cents    Int                    @default(0)
+  currency       String                 @default("USD") @db.Char(3)
+  trial_days     Int                    @default(14)
+  limits         Json?
+  features       Json?
+  is_system      Boolean                @default(false)
+  created_at     DateTime               @default(now())
+  updated_at     DateTime               @updatedAt
+  subscriptions  clinic_subscriptions[]
+
+  @@index([status])
+}
+
+model clinic_subscriptions {
+  id                      String             @id @db.Char(36)
+  clinic_id               String             @db.Char(36)
+  plan_id                 String             @db.Char(36)
+  status                  String             @default("TRIALING") @db.VarChar(40)
+  starts_at               DateTime           @default(now())
+  ends_at                 DateTime?
+  trial_ends_at           DateTime?
+  active_subscription_key String?            @unique @db.VarChar(120)
+  metadata                Json?
+  created_by              String?            @db.Char(36)
+  updated_by              String?            @db.Char(36)
+  deleted_by              String?            @db.Char(36)
+  is_deleted              Boolean            @default(false)
+  created_at              DateTime           @default(now())
+  updated_at              DateTime           @updatedAt
+  deleted_at              DateTime?
+  clinic                  clinics            @relation(fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  plan                    subscription_plans @relation(fields: [plan_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  creator                 users?             @relation("subscription_created_by", fields: [created_by], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([clinic_id, is_deleted])
+  @@index([clinic_id, updated_at])
+  @@index([clinic_id, status, ends_at])
+  @@index([plan_id])
+}
+
 model users {
   id            String    @id @db.Char(36)
   clinic_id     String?   @db.Char(36)
@@ -73,6 +374,13 @@ model users {
   account_lockouts account_lockouts[]
   user_roles user_roles[]
   branch_assignments user_branch_assignments[]
+  clinic clinics? @relation("clinic_users", fields: [clinic_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  owned_clinics clinics[] @relation("clinic_owner")
+  settings settings[] @relation("user_settings")
+  setting_history_changes setting_history[] @relation("setting_changed_by")
+  invitations user_invitations[] @relation("invitation_user")
+  sent_invitations user_invitations[] @relation("invitation_inviter")
+  subscription_creations clinic_subscriptions[] @relation("subscription_created_by")
 
   @@unique([clinic_id, email])
   @@unique([login_scope, email])
@@ -117,6 +425,7 @@ model roles {
   deleted_at       DateTime?
   role_permissions role_permissions[]
   user_roles       user_roles[]
+  clinic           clinics?           @relation("clinic_roles", fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([scope_key, code])
   @@index([clinic_id])
@@ -142,6 +451,7 @@ model role_permissions {
   deleted_at    DateTime?
   role          roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   permission    permissions @relation(fields: [permission_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  clinic        clinics?    @relation("clinic_role_permissions", fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([role_id, permission_id, scope])
   @@index([clinic_id])
@@ -169,6 +479,7 @@ model user_roles {
   deleted_at  DateTime?
   user        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
   role        roles     @relation(fields: [role_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  clinic      clinics?  @relation("clinic_user_roles", fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([clinic_id])
   @@index([clinic_id, is_deleted])
@@ -186,6 +497,8 @@ model user_branch_assignments {
   user_id     String    @db.Char(36)
   branch_id   String    @db.Char(36)
   is_primary  Boolean   @default(false)
+  active_assignment_key String? @unique @db.VarChar(180)
+  active_primary_assignment_key String? @unique @db.VarChar(180)
   assigned_by String?   @db.Char(36)
   revoked_at  DateTime?
   revoked_by  String?   @db.Char(36)
@@ -197,6 +510,8 @@ model user_branch_assignments {
   updated_at  DateTime  @updatedAt
   deleted_at  DateTime?
   user        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  clinic      clinics   @relation(fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  branch      clinic_branches @relation(fields: [branch_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([clinic_id])
   @@index([clinic_id, is_deleted])
@@ -223,6 +538,7 @@ model refresh_tokens {
   created_at           DateTime  @default(now())
   updated_at           DateTime  @updatedAt
   user                 users     @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  clinic               clinics?  @relation("clinic_refresh_tokens", fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([token_hash])
   @@index([clinic_id, user_id, expires_at])
@@ -240,6 +556,7 @@ model password_reset_tokens {
   used_at    DateTime?
   created_at DateTime  @default(now())
   user       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  clinic     clinics?  @relation("clinic_password_reset_tokens", fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@unique([token_hash])
   @@index([clinic_id, user_id, expires_at])
@@ -257,6 +574,7 @@ model login_attempts {
   failure_reason String?  @db.VarChar(160)
   attempted_at   DateTime @default(now())
   user           users?   @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  clinic         clinics? @relation("clinic_login_attempts", fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([clinic_id, email, attempted_at])
   @@index([ip_address, attempted_at])
@@ -274,6 +592,7 @@ model account_lockouts {
   unlocked_at   DateTime?
   created_at    DateTime  @default(now())
   user          users?    @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  clinic        clinics?  @relation("clinic_account_lockouts", fields: [clinic_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([clinic_id, email, locked_until])
   @@index([user_id, locked_until])

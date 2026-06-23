@@ -22,6 +22,7 @@ const findUserForLogin = async ({ email, clinicId = null }, connection) => users
     clinic_id: clinicId,
     is_deleted: false,
   },
+  include: { clinic: true },
 });
 
 const findUserById = async (userId, connection) => users(connection).findFirst({
@@ -30,6 +31,7 @@ const findUserById = async (userId, connection) => users(connection).findFirst({
     ...(typeof userId === 'object' ? { clinic_id: userId.isPlatform ? null : userId.clinicId } : {}),
     is_deleted: false,
   },
+  include: { clinic: true },
 });
 
 const updateLastLogin = async (userId, connection) => users(connection).update({
@@ -41,7 +43,7 @@ const createRefreshToken = async (payload, connection) => refreshTokens(connecti
 
 const findRefreshTokenByHash = async (tokenHash, connection) => refreshTokens(connection).findUnique({
   where: { token_hash: tokenHash },
-  include: { user: true },
+  include: { user: { include: { clinic: true } } },
 });
 
 const findActiveRefreshTokenBySession = async ({
@@ -58,7 +60,7 @@ const findActiveRefreshTokenBySession = async ({
     revoked_at: null,
     expires_at: { gt: new Date() },
   },
-  include: { user: true },
+  include: { user: { include: { clinic: true } } },
 });
 
 const claimActiveRefreshTokenForRotation = async ({

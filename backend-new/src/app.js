@@ -13,16 +13,29 @@ const { env } = require('./config/env');
 const { ping } = require('./database/prisma');
 const { requestId } = require('./common/middleware/requestId');
 const { requestContext } = require('./common/middleware/requestContext');
-const { createCsrfProtection } = require('./common/middleware/csrf');
+const { createCsrfProtection, requireAllowedOrigin } = require('./common/middleware/csrf');
 const { attachTenantPlaceholder } = require('./common/middleware/tenantContext');
 const { requestLogger } = require('./common/middleware/requestLogger');
 const { notFound, errorHandler } = require('./common/middleware/errorHandler');
 const { createAuthRouter } = require('./modules/auth/auth.routes');
 const { createAuthService } = require('./modules/auth/auth.service');
+const { createBranchesRouter } = require('./modules/branches/branches.routes');
+const { createBranchesService } = require('./modules/branches/branches.service');
+const { createClinicsRouter } = require('./modules/clinics/clinics.routes');
+const { createClinicsService } = require('./modules/clinics/clinics.service');
 const { createFoundationRouter } = require('./modules/foundation/foundation.routes');
+const { createPatientRecordsRouter } = require('./modules/patientRecords/patientRecords.routes');
+const { createPatientRecordsService } = require('./modules/patientRecords/patientRecords.service');
+const { createPatientsRouter } = require('./modules/patients/patients.routes');
+const { createPatientsService } = require('./modules/patients/patients.service');
 const { createRbacRouter } = require('./modules/rbac/rbac.routes');
 const { createRbacService } = require('./modules/rbac/rbac.service');
-const { createUsersRouter } = require('./modules/users/users.routes');
+const { createSettingsRouter } = require('./modules/settings/settings.routes');
+const { createSettingsService } = require('./modules/settings/settings.service');
+const { createSubscriptionsRouter } = require('./modules/subscriptions/subscriptions.routes');
+const { createSubscriptionsService } = require('./modules/subscriptions/subscriptions.service');
+const { createUsersPublicRouter, createUsersRouter } = require('./modules/users/users.routes');
+const { createUsersService } = require('./modules/users/users.service');
 
 const parseOrigins = (value) => String(value).split(',').map((origin) => origin.trim()).filter(Boolean);
 const isHealthRoute = (req) => req.path === '/health' || req.path === '/health/ready';
@@ -39,8 +52,15 @@ const createApp = ({
   rateLimitOptions = {},
   authLoginRateLimitOptions = {},
   authRefreshRateLimitOptions = {},
+  authInvitationAcceptRateLimitOptions = {},
   authService,
+  branchesService,
+  clinicsService,
+  patientRecordsService,
+  patientsService,
   rbacService,
+  settingsService,
+  subscriptionsService,
   usersService,
   enablePostSprint1Routes = env.ENABLE_POST_SPRINT_1_ROUTES,
 } = {}) => {
@@ -48,9 +68,20 @@ const createApp = ({
   const origins = parseOrigins(env.CORS_ALLOWED_ORIGINS);
   const validateOrigin = (origin, callback) => callback(null, !origin || origins.includes(origin));
   const csrfProtection = createCsrfProtection();
+  const originGuard = requireAllowedOrigin();
   const resolvedRbacService = rbacService || createRbacService();
   const resolvedAuthService = authService || createAuthService({
     permissionResolver: (input) => resolvedRbacService.resolveEffectiveAccess(input),
+  });
+  const resolvedBranchesService = branchesService || createBranchesService();
+  const resolvedClinicsService = clinicsService || createClinicsService({ rbacService: resolvedRbacService });
+  const resolvedPatientsService = patientsService || createPatientsService();
+  const resolvedPatientRecordsService = patientRecordsService || createPatientRecordsService();
+  const resolvedSettingsService = settingsService || createSettingsService();
+  const resolvedSubscriptionsService = subscriptionsService || createSubscriptionsService();
+  const resolvedUsersService = usersService || createUsersService({
+    authService: resolvedAuthService,
+    branchesService: resolvedBranchesService,
   });
 
   app.set('trust proxy', env.TRUST_PROXY);
@@ -84,7 +115,18 @@ const createApp = ({
   app.use('/api/v1/auth', createAuthRouter({ service: resolvedAuthService }));
   if (enablePostSprint1Routes) {
     app.use('/api/v1/rbac', csrfProtection, createRbacRouter({ authService: resolvedAuthService, service: resolvedRbacService }));
-    app.use('/api/v1/users', csrfProtection, createUsersRouter({ authService: resolvedAuthService, service: usersService }));
+    app.use('/api/v1/users/invitations/accept', createRateLimiter({
+      windowMs: authInvitationAcceptRateLimitOptions.windowMs ?? env.AUTH_INVITATION_ACCEPT_RATE_LIMIT_WINDOW_MS,
+      max: authInvitationAcceptRateLimitOptions.max ?? env.AUTH_INVITATION_ACCEPT_RATE_LIMIT_MAX,
+    }));
+    app.use('/api/v1/users', createUsersPublicRouter({ service: resolvedUsersService, originGuard }));
+    app.use('/api/v1/users', csrfProtection, createUsersRouter({ authService: resolvedAuthService, service: resolvedUsersService }));
+    app.use('/api/v1/clinics', csrfProtection, createClinicsRouter({ authService: resolvedAuthService, service: resolvedClinicsService }));
+    app.use('/api/v1/branches', csrfProtection, createBranchesRouter({ authService: resolvedAuthService, service: resolvedBranchesService }));
+    app.use('/api/v1/patients', csrfProtection, createPatientsRouter({ authService: resolvedAuthService, service: resolvedPatientsService }));
+    app.use('/api/v1/patient-records', csrfProtection, createPatientRecordsRouter({ authService: resolvedAuthService, service: resolvedPatientRecordsService }));
+    app.use('/api/v1/settings', csrfProtection, createSettingsRouter({ authService: resolvedAuthService, service: resolvedSettingsService }));
+    app.use('/api/v1/subscriptions', csrfProtection, createSubscriptionsRouter({ authService: resolvedAuthService, service: resolvedSubscriptionsService }));
   }
 
   app.use(notFound);

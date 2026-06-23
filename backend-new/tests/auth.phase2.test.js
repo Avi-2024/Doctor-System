@@ -223,6 +223,11 @@ const createActiveUser = async (overrides = {}) => ({
   status: overrides.status || USER_STATUS.ACTIVE,
   token_version: Object.prototype.hasOwnProperty.call(overrides, 'token_version') ? overrides.token_version : 0,
   is_deleted: Boolean(overrides.is_deleted),
+  clinic: Object.prototype.hasOwnProperty.call(overrides, 'clinic')
+    ? overrides.clinic
+    : ((Object.prototype.hasOwnProperty.call(overrides, 'clinic_id') && overrides.clinic_id === null)
+      ? null
+      : { id: overrides.clinic_id || '22222222-2222-4222-8222-222222222222', status: 'ACTIVE', is_deleted: false }),
 });
 
 const createTestAuthService = ({ users = [] } = {}) => {

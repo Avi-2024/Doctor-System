@@ -82,6 +82,8 @@ const buildEnv = (source = process.env) => {
     AUTH_LOGIN_RATE_LIMIT_MAX: integerValue(source, 'AUTH_LOGIN_RATE_LIMIT_MAX', 10, { min: 1, max: 100000 }),
     AUTH_REFRESH_RATE_LIMIT_WINDOW_MS: integerValue(source, 'AUTH_REFRESH_RATE_LIMIT_WINDOW_MS', 900000, { min: 1000, max: 86400000 }),
     AUTH_REFRESH_RATE_LIMIT_MAX: integerValue(source, 'AUTH_REFRESH_RATE_LIMIT_MAX', 60, { min: 1, max: 100000 }),
+    AUTH_INVITATION_ACCEPT_RATE_LIMIT_WINDOW_MS: integerValue(source, 'AUTH_INVITATION_ACCEPT_RATE_LIMIT_WINDOW_MS', 900000, { min: 1000, max: 86400000 }),
+    AUTH_INVITATION_ACCEPT_RATE_LIMIT_MAX: integerValue(source, 'AUTH_INVITATION_ACCEPT_RATE_LIMIT_MAX', 20, { min: 1, max: 100000 }),
     AUTH_LOCKOUT_MAX_FAILURES: integerValue(source, 'AUTH_LOCKOUT_MAX_FAILURES', 5, { min: 1, max: 100 }),
     AUTH_LOCKOUT_WINDOW_MS: integerValue(source, 'AUTH_LOCKOUT_WINDOW_MS', 900000, { min: 1000, max: 86400000 }),
     AUTH_LOCKOUT_DURATION_MS: integerValue(source, 'AUTH_LOCKOUT_DURATION_MS', 900000, { min: 1000, max: 86400000 }),
@@ -91,6 +93,8 @@ const buildEnv = (source = process.env) => {
     REFRESH_TOKEN_TTL_SECONDS: integerValue(source, 'REFRESH_TOKEN_TTL_SECONDS', 2592000, { min: 86400, max: 7776000 }),
     AUTH_COOKIE_SECURE,
     ENABLE_POST_SPRINT_1_ROUTES: booleanValue(source, 'ENABLE_POST_SPRINT_1_ROUTES', false),
+    SETTINGS_ENCRYPTION_KEY: rawValue(source, 'SETTINGS_ENCRYPTION_KEY', ''),
+    PHI_ENCRYPTION_KEY: rawValue(source, 'PHI_ENCRYPTION_KEY', ''),
     DATABASE_URL,
     SENTRY_DSN,
   });
